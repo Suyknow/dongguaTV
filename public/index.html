@@ -5074,11 +5074,189 @@
                                                     }
                                                 }
                                             } catch (e) { console.warn('Highlight update failed:', e); }
+
+                                            // 初始化/显示跳过片头片尾 UI
+                                            if (isOpen && window.skipManager) {
+                                                window.skipManager.initUI();
+                                            }
                                         }
                                     });
                                 });
 
                                 observer.observe(settingBox, { attributes: true });
+
+                                // ========== ✨ 跳过片头片尾管理器 ==========
+                                window.skipManager = {
+                                    vue: this,
+                                    config: { intro: 0, outro: 0, enabled: false },
+                                    hasSkippedIntro: false,
+                                    hasSkippedOutro: false,
+
+                                    getKey() {
+                                        const vodName = this.vue.currentGroup?.name || 'default';
+                                        // 简单处理 key，防止特殊字符
+                                        const safeName = vodName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+                                        return `skip_config_${safeName}`;
+                                    },
+
+                                    load() {
+                                        try {
+                                            const saved = localStorage.getItem(this.getKey());
+                                            if (saved) this.config = JSON.parse(saved);
+                                            else this.config = { intro: 0, outro: 0, enabled: false };
+                                        } catch (e) { }
+                                        this.hasSkippedIntro = false;
+                                        this.hasSkippedOutro = false;
+                                        this.updateUI();
+                                    },
+
+                                    save() {
+                                        localStorage.setItem(this.getKey(), JSON.stringify(this.config));
+                                        this.updateUI();
+                                    },
+
+                                    formatTime(seconds) {
+                                        if (!seconds) return '未设置';
+                                        const m = Math.floor(seconds / 60);
+                                        const s = Math.floor(seconds % 60);
+                                        return `${m}:${s.toString().padStart(2, '0')}`;
+                                    },
+
+                                    initUI() {
+                                        const panel = document.querySelector('.dplayer-setting-origin-panel');
+                                        if (!panel || panel.querySelector('.dplayer-setting-skip-group')) {
+                                            if (panel) this.updateUI(); // 如果已存在，仅更新数据
+                                            return;
+                                        }
+
+                                        const html = `
+                                            <div class="dplayer-setting-skip-group" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 5px; padding-top: 5px;">
+                                                <div class="dplayer-setting-item dplayer-setting-skip-toggle">
+                                                    <span class="dplayer-label">跳过片头片尾</span>
+                                                    <div class="dplayer-toggle">
+                                                        <input class="dplayer-toggle-setting-input" type="checkbox" ${this.config.enabled ? 'checked' : ''}>
+                                                        <div class="dplayer-toggle-setting-icon"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="dplayer-setting-item dplayer-setting-set-intro" style="cursor: pointer; justify-content: space-between;">
+                                                    <span class="dplayer-label">设置片头</span>
+                                                    <span class="dplayer-value intro-val" style="color: #e50914;">${this.formatTime(this.config.intro)}</span>
+                                                </div>
+                                                <div class="dplayer-setting-item dplayer-setting-set-outro" style="cursor: pointer; justify-content: space-between;">
+                                                    <span class="dplayer-label">设置片尾</span>
+                                                    <span class="dplayer-value outro-val" style="color: #e50914;">${this.formatTime(this.config.outro)}</span>
+                                                </div>
+                                                 <div class="dplayer-setting-item dplayer-setting-del-config" style="cursor: pointer; color: #888; font-size: 12px; justify-content: center; margin-top: 5px;">
+                                                    <i class="fas fa-trash-alt"></i> 删除跳过配置
+                                                </div>
+                                            </div>
+                                        `;
+                                        panel.insertAdjacentHTML('beforeend', html);
+
+                                        // 绑定事件
+                                        const group = panel.querySelector('.dplayer-setting-skip-group');
+
+                                        // Toggle
+                                        group.querySelector('.dplayer-setting-skip-toggle input').addEventListener('change', (e) => {
+                                            this.config.enabled = e.target.checked;
+                                            this.save();
+                                            dp.notice(this.config.enabled ? '已开启跳过功能' : '已关闭跳过功能');
+                                        });
+
+                                        // Set Intro
+                                        group.querySelector('.dplayer-setting-set-intro').addEventListener('click', () => {
+                                            if (!dp.video) return;
+                                            this.config.intro = Math.floor(dp.video.currentTime);
+                                            this.config.enabled = true;
+                                            this.save();
+                                            dp.notice(`已设置片头: ${this.formatTime(this.config.intro)}`);
+                                        });
+
+                                        // Set Outro
+                                        group.querySelector('.dplayer-setting-set-outro').addEventListener('click', () => {
+                                            if (!dp.video) return;
+                                            this.config.outro = Math.floor(dp.video.currentTime);
+                                            this.config.enabled = true;
+                                            this.save();
+                                            dp.notice(`已设置片尾: ${this.formatTime(this.config.outro)}`);
+                                        });
+
+                                        // Delete Config
+                                        group.querySelector('.dplayer-setting-del-config').addEventListener('click', () => {
+                                            this.config = { intro: 0, outro: 0, enabled: false };
+                                            this.save();
+                                            dp.notice('已删除跳过配置');
+                                        });
+                                    },
+
+                                    updateUI() {
+                                        const group = document.querySelector('.dplayer-setting-skip-group');
+                                        if (!group) return;
+
+                                        const toggle = group.querySelector('.dplayer-setting-skip-toggle input');
+                                        if (toggle) toggle.checked = this.config.enabled;
+
+                                        const introVal = group.querySelector('.intro-val');
+                                        if (introVal) introVal.textContent = this.formatTime(this.config.intro);
+
+                                        const outroVal = group.querySelector('.outro-val');
+                                        if (outroVal) outroVal.textContent = this.formatTime(this.config.outro);
+                                    },
+
+                                    check(time) {
+                                        if (!this.config.enabled) return;
+
+                                        // Intro (仅在开始播放的前5分钟内生效，且未跳过过)
+                                        if (this.config.intro > 0 && time < this.config.intro && !this.hasSkippedIntro) {
+                                            // 安全检查：如果当前时间离片头太远（比如手动 seek 回去的），可能不该跳？
+                                            // 这里简化逻辑：只要小于 intro 且没跳过，就跳
+                                            dp.seek(this.config.intro);
+                                            dp.notice('已跳过片头');
+                                            this.hasSkippedIntro = true;
+                                        }
+
+                                        // Outro
+                                        if (this.config.outro > 0 && time > this.config.outro && !this.hasSkippedOutro) {
+                                            dp.notice('已跳过片尾');
+                                            this.hasSkippedOutro = true;
+                                            // 触发 ended 事件，Vue 会捕获并更新历史记录，但需要手动触发自动下一集逻辑（如果 App 有的话）
+                                            // 这里直接触发 ended，DPlayer 会认为播放结束
+                                            if (dp.events) dp.events.trigger('ended');
+                                        }
+                                    }
+                                };
+
+                                // 监听播放器事件
+                                dp.on('timeupdate', () => {
+                                    if (dp.video && window.skipManager) window.skipManager.check(dp.video.currentTime);
+                                });
+
+                                dp.on('canplay', () => {
+                                    if (window.skipManager) window.skipManager.load();
+                                });
+
+                                // 初始加载配置
+                                window.skipManager.load();
+
+                                // 注入“下一集”按钮
+                                {
+                                    const iconsRight = dplayerContainer.querySelector('.dplayer-icons-right');
+                                    if (iconsRight && !iconsRight.querySelector('.dplayer-next-icon')) {
+                                        const nextBtnHtml = `
+                                            <div class="dplayer-icon dplayer-next-icon" data-balloon="下一集" data-balloon-pos="up">
+                                                <span class="dplayer-icon-content"><i class="fas fa-step-forward" aria-hidden="true"></i></span>
+                                            </div>
+                                        `;
+                                        iconsRight.insertAdjacentHTML('afterbegin', nextBtnHtml);
+
+                                        const nextBtn = iconsRight.querySelector('.dplayer-next-icon');
+                                        if (nextBtn) {
+                                            nextBtn.addEventListener('click', () => {
+                                                this.playNextEpisode();
+                                            });
+                                        }
+                                    }
+                                }
 
                                 // 再次点击设置按钮时关闭设置菜单
                                 const settingIcon = dplayerContainer.querySelector('.dplayer-setting-icon');
@@ -5582,6 +5760,11 @@
                             if (movieName) {
                                 this.addToWatchHistory(movieName, poster, episodeName, duration, duration, this.currentGroup);
                             }
+
+                            // 自动播放下一集（非单曲循环模式下）
+                            if (!dp.loop) {
+                                this.playNextEpisode(true);
+                            }
                         });
 
                     } else {
@@ -5722,6 +5905,32 @@
                         setTimeout(() => {
                             this.autoRetryMessage = '';
                         }, 3000);
+                    }
+                },
+
+                // 播放下一集
+                playNextEpisode(auto = false) {
+                    if (!this.episodeList || this.episodeList.length === 0) return;
+
+                    const currentIndex = this.episodeList.findIndex(ep => ep.url === this.currentUrl);
+                    if (currentIndex < 0) return;
+
+                    if (currentIndex < this.episodeList.length - 1) {
+                        const nextEp = this.episodeList[currentIndex + 1];
+                        console.log('播放下一集:', nextEp.name);
+
+                        if (auto) {
+                            if (typeof dp !== 'undefined' && dp.notice) dp.notice(`即将播放下一集: ${nextEp.name}`, 3000);
+                        }
+
+                        this.play(nextEp.url);
+
+                        this.$nextTick(() => {
+                            const activeBtn = document.querySelector('.episode-btn.active');
+                            if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        });
+                    } else {
+                        if (typeof dp !== 'undefined' && dp.notice) dp.notice('已经是最后一集了');
                     }
                 }
             }
