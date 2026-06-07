@@ -4044,6 +4044,17 @@
         fetchClientPublicIP();
 
         let dp = null;
+        // 🛡️ 安全跳转：媒体在换源/代理回退重载时 currentTime 会是 NaN，相对跳转会把 NaN 写进 currentTime →
+        //    DPlayer 抛 "non-finite" TypeError、可能打断换源。所有跳转统一走守卫，非有限值直接跳过。
+        const safeSeek = (t) => { if (dp && Number.isFinite(t) && t >= 0) { try { dp.seek(t); } catch (e) { } } };
+        const safeSeekBy = (delta) => {
+            if (!dp || !dp.video) return;
+            const cur = dp.video.currentTime;
+            if (!Number.isFinite(cur)) return; // 媒体重载中 currentTime=NaN → 放弃本次相对跳转
+            const dur = Number.isFinite(dp.video.duration) ? dp.video.duration : Infinity;
+            const next = Math.min(dur, Math.max(0, cur + delta));
+            if (Number.isFinite(next)) { try { dp.video.currentTime = next; } catch (e) { } }
+        };
         let _lastProgressSaveTime = 0;  // timeupdate 节流时间戳（每15秒保存一次）
         // 🧭 导航令牌：每次切换剧集/打开/关闭详情时自增，用于作废上一部剧残留的
         //    异步任务（refreshEpisodes / refreshSources / 测速探测 / 错误回退定时器），
@@ -4389,7 +4400,7 @@
                             if (isProgressBar && dp && dp.video) {
                                 e.preventDefault();
                                 e.stopImmediatePropagation();
-                                dp.video.currentTime = Math.max(0, dp.video.currentTime - 10);
+                                safeSeekBy(-10);
                                 dp.notice('⏪ 快退 10 秒');
                                 return false;
                             }
@@ -4400,7 +4411,7 @@
                             if (isProgressBar && dp && dp.video) {
                                 e.preventDefault();
                                 e.stopImmediatePropagation();
-                                dp.video.currentTime = Math.min(dp.video.duration || 0, dp.video.currentTime + 10);
+                                safeSeekBy(10);
                                 dp.notice('⏩ 快进 10 秒');
                                 return false;
                             }
@@ -6622,6 +6633,7 @@
                 async switchSource(source) {
                     this.currentSource = source;
                     this.loadingDetail = true;
+                    this.playbackErrorCount = 0;  // 🔄 每次换源重置错误计数：否则换源链(handlePlaybackError>1 即拦截)会在第二个源就卡死
                     const mySeq = _navSeq;  // 🧭 记录导航上下文（未缓存的源需 await 详情，期间可能切换剧集）
 
                     // 记住当前集数名称，切换后尝试保留（在清空之前获取！）
@@ -6667,8 +6679,17 @@
                             // 保存简介信息到当前源
                             this.currentSource.vod_content = detail.vod_content || detail.vod_blurb || '';
                             this.parseEpisodes(detail.vod_play_url, epName);
+                        } else {
+                            // 📡 详情拉取为空 → 推进到下一个源，避免换源链在此源卡死(此路径不会走到 play() 重置计数)
+                            this.loadingDetail = false;
+                            this.handlePlaybackError();
+                            return;
                         }
-                    } catch (e) { console.log('[切换资源] 错误:', e); }
+                    } catch (e) {
+                        console.log('[切换资源] 错误:', e);
+                        // 仅在仍是当前导航上下文时推进，避免影响已切走的剧(防串剧)
+                        if (mySeq === _navSeq) { this.loadingDetail = false; this.handlePlaybackError(); return; }
+                    }
                     this.loadingDetail = false;
                 },
 
@@ -7786,14 +7807,12 @@
 
                                 if (isLeftSide && dp.video) {
                                     // 左侧双击 - 快退
-                                    const newTime = Math.max(0, dp.video.currentTime - SEEK_SECONDS);
-                                    dp.seek(newTime);
+                                    safeSeekBy(-SEEK_SECONDS);
                                     seekHintLeft.classList.add('show');
                                     setTimeout(() => seekHintLeft.classList.remove('show'), 600);
                                 } else if (isRightSide && dp.video) {
                                     // 右侧双击 - 快进
-                                    const newTime = Math.min(dp.video.duration || 0, dp.video.currentTime + SEEK_SECONDS);
-                                    dp.seek(newTime);
+                                    safeSeekBy(SEEK_SECONDS);
                                     seekHintRight.classList.add('show');
                                     setTimeout(() => seekHintRight.classList.remove('show'), 600);
                                 } else if (isCenter) {
@@ -7917,7 +7936,7 @@
 
                                 if (saved) {
                                     const savedData = JSON.parse(saved);
-                                    const savedTime = savedData.time;
+                                    const savedTime = Number(savedData.time);
                                     const savedDate = new Date(savedData.date);
                                     const now = new Date();
                                     const daysDiff = (now - savedDate) / (1000 * 60 * 60 * 24);
@@ -7938,7 +7957,7 @@
                                         // 记录跳转前的时间
                                         const beforeSeek = dp.video.currentTime;
 
-                                        dp.seek(savedTime);
+                                        safeSeek(savedTime);
 
                                         // 延迟检查跳转是否成功
                                         setTimeout(() => {
@@ -8172,7 +8191,7 @@
 
                                 if (saved) {
                                     const savedData = JSON.parse(saved);
-                                    const savedTime = savedData.time;
+                                    const savedTime = Number(savedData.time);
                                     const savedDate = new Date(savedData.date);
                                     const daysDiff = (new Date() - savedDate) / (1000 * 60 * 60 * 24);
 
@@ -8187,7 +8206,7 @@
                                     if (isTimeOK && isMinOK && isMaxOK) {
                                         setTimeout(() => {
                                             console.log('[进度记忆-切换] 执行 seek 到:', savedTime);
-                                            dp.seek(savedTime);
+                                            safeSeek(savedTime);
                                             dp.notice(`▶ 已恢复上次观看位置`, 2000);
 
                                             setTimeout(() => {
@@ -8396,7 +8415,7 @@
                                         rewindBtn.style.cssText = 'background:#444;border-radius:8px;padding:12px 20px;color:#fff;border:none;cursor:pointer;font-size:16px;';
                                         rewindBtn.onclick = () => {
                                             if (dp && dp.video) {
-                                                dp.video.currentTime = Math.max(0, dp.video.currentTime - 10);
+                                                safeSeekBy(-10);
                                                 dp.notice('⏪ 快退 10 秒');
                                             }
                                         };
@@ -8424,7 +8443,7 @@
                                         forwardBtn.style.cssText = 'background:#444;border-radius:8px;padding:12px 20px;color:#fff;border:none;cursor:pointer;font-size:16px;';
                                         forwardBtn.onclick = () => {
                                             if (dp && dp.video) {
-                                                dp.video.currentTime = Math.min(dp.video.duration || 0, dp.video.currentTime + 10);
+                                                safeSeekBy(10);
                                                 dp.notice('⏩ 快进 10 秒');
                                             }
                                         };
