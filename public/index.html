@@ -3591,6 +3591,57 @@
         html[data-style="film"] .pl-collage { border: 4px solid var(--print); border-bottom-width: 12px; background: var(--print); box-shadow: 0 6px 14px rgba(var(--shadow-rgb), .55); }
         html[data-style="film"] .pl-collage img { filter: sepia(.28) saturate(.88) contrast(1.06); }
         html[data-style="film"] .pl-card:hover .pl-collage { box-shadow: 0 14px 30px rgba(var(--shadow-rgb), .7), 0 0 0 2px var(--accent); }
+        /* 🎞️「短剧」分类页:整屏盖住首页(同片单页 9000;播放页 9999 / 竖屏刷 10010 在它上面);颜色都走主题变量 */
+        body.sl-open { overflow: hidden; }
+        .sl-page { position: fixed; inset: 0; z-index: 9000; background: var(--bg); color: var(--text-1); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; outline: none; }
+        .sl-wrap { max-width: 1400px; margin: 0 auto; padding: 24px 4% 60px; }
+        @supports (top: max(1px, 2px)) {
+            .sl-wrap { padding-top: max(24px, calc(env(safe-area-inset-top, 0px) + 12px), calc(var(--dg-sb-guard, 0px) + 12px)); }
+        }
+        .sl-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+        .sl-back { color: var(--text-1); border-color: rgba(var(--fg-rgb), .3); }
+        .sl-heading { flex: 1; min-width: 0; }
+        .sl-title { margin: 0; font-family: var(--font-display); font-size: 26px; font-weight: 700; line-height: 1.2; }
+        .sl-sub { margin-top: 3px; color: var(--text-7); font-size: 13px; }
+        .sl-swipe { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border: 0; border-radius: calc(19px * var(--radius-k)); background: var(--accent); color: var(--on-accent); font-size: 14px; font-weight: 600; cursor: pointer; }
+        .sl-search { position: relative; display: flex; align-items: center; max-width: 520px; margin-bottom: 14px; }
+        .sl-search > i { position: absolute; left: 15px; color: var(--text-7); font-size: 14px; pointer-events: none; }
+        /* 16px:iOS 上输入框字号小于 16px 会在聚焦时整页放大 */
+        .sl-search input { width: 100%; height: 42px; padding: 0 40px; border: 1px solid rgba(var(--fg-rgb), .15); border-radius: calc(21px * var(--radius-k)); background: var(--surface-5); color: var(--text-1); font-size: 16px; outline: none; }
+        .sl-search input:focus { border-color: var(--accent); }
+        .sl-search input::-webkit-search-cancel-button { display: none; }
+        .sl-q-x { position: absolute; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--text-6); cursor: pointer; }
+        .sl-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; scrollbar-width: none; }
+        .sl-tabs::-webkit-scrollbar { display: none; }
+        .sl-tabs button { flex: none; height: 34px; padding: 0 14px; border: 1px solid rgba(var(--fg-rgb), .15); border-radius: calc(17px * var(--radius-k)); background: none; color: var(--text-3); font-size: 14px; cursor: pointer; }
+        .sl-tabs button small { margin-left: 5px; color: var(--text-8); font-size: 11px; }
+        .sl-tabs button.on { border-color: transparent; background: var(--accent); color: var(--on-accent); }
+        .sl-tabs button.on small { color: inherit; opacity: .75; }
+        .sl-sorts { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 16px; font-size: 13px; }
+        .sl-sorts button { padding: 4px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-6); font-size: 14px; cursor: pointer; }
+        .sl-sorts button.on { color: var(--text-1); border-bottom-color: var(--accent); font-weight: 600; }
+        .sl-only { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; color: var(--text-6); cursor: pointer; }
+        .sl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px; }
+        .sl-card { display: block; min-width: 0; padding: 0; border: 0; background: none; color: var(--text-1); text-align: left; cursor: pointer; }
+        .sl-poster { position: relative; aspect-ratio: 3 / 4; overflow: hidden; border-radius: calc(10px * var(--radius-k)); background: var(--surface-5); }
+        .sl-poster img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+        @media (hover: hover) { .sl-card:hover .sl-poster img { transform: scale(1.04); } }
+        .sl-badge { position: absolute; left: 6px; top: 6px; max-width: calc(100% - 12px); padding: 1px 7px; border-radius: calc(4px * var(--radius-k)); background: rgba(var(--accent-rgb), .9); color: var(--on-accent); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sl-eps { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 6px; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); color: #fff; font-size: 12px; }
+        .sl-name { margin-top: 7px; font-size: 14px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .sl-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: calc(10px * var(--radius-k)); }
+        .sl-foot { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 90px; color: var(--text-7); font-size: 13px; }
+        .sl-foot .sh-spin { margin: 0; border-color: rgba(var(--fg-rgb), .18); border-top-color: var(--accent); }
+        .sl-retry { padding: 4px 12px; border: 1px solid rgba(var(--fg-rgb), .2); border-radius: calc(14px * var(--radius-k)); background: none; color: var(--text-3); cursor: pointer; }
+        .btn-back-shorts { border-color: rgba(var(--accent-rgb), .6) !important; }
+        .btn-back-shorts i { color: var(--accent); }
+        @media (max-width: 600px) {
+            .sl-wrap { padding-left: 12px; padding-right: 12px; }
+            .sl-title { font-size: 22px; }
+            .sl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 8px; }
+            .sl-name { font-size: 13px; }
+            .sl-only { margin-left: 0; }
+        }
         /* 片单页:整屏盖住首页(播放页 9999 / 加到片单弹窗 10010 在它上面);首页在后面不滚 */
         body.pl-open { overflow: hidden; }
         .pl-page { position: fixed; inset: 0; z-index: 9000; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
@@ -3751,6 +3802,7 @@
         body.detail-covered #app > .browse-page,
         body.detail-covered #app > .browse-sticky,
         body.detail-covered #app > .pl-page,
+        body.detail-covered #app > .sl-page,
         body.detail-covered #app > #search-result-anchor,
         body.detail-covered #app > .footer {
             visibility: hidden !important;
@@ -5368,8 +5420,9 @@
         .sh-mv { position: absolute; inset: 0; transform: translate3d(0, var(--sh-dy), 0); will-change: transform; }
         .shorts-page.sh-anim .sh-mv { transition: transform .28s cubic-bezier(.2, .75, .25, 1); }
         .sh-slide { position: absolute; left: 0; right: 0; height: 100%; overflow: hidden; }
-        .sh-pbg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(28px) brightness(.38); }
-        .sh-pic { position: absolute; inset: 0; background-size: contain; background-repeat: no-repeat; background-position: center; opacity: .55; }
+        /* 底色一律纯黑(像抖音);封面只在这部刚开始加载、画面还没出来时垫着,出画面就淡掉(当前这张 .off),上下邻居卡还没加载,滑动时露的是封面 */
+        .sh-pic { position: absolute; inset: 0; background-size: contain; background-repeat: no-repeat; background-position: center; transition: opacity .2s; }
+        .sh-pic.off { opacity: 0; }
         .sh-vl { pointer-events: none; }
         .sh-vl video { display: block; width: 100%; height: 100%; object-fit: contain; background: transparent; opacity: 0; transition: opacity .18s; }
         .sh-vl.ready video { opacity: 1; }
@@ -5390,7 +5443,8 @@
         .sh-btn:active i { transform: scale(.9); }
         .sh-btn.on i { color: var(--sh-acc); }
         .sh-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #aaa; font-size: 14px; }
-        .sh-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 24px; background: linear-gradient(rgba(0, 0, 0, .5), transparent); pointer-events: none; }
+        .sh-top { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 24px; pointer-events: none; }
+        .sh-top .sh-ibtn { opacity: .75; }
         @supports (top: max(1px, 2px)) {
             .sh-top { padding-top: max(10px, calc(env(safe-area-inset-top, 0px) + 6px), calc(var(--dg-sb-guard, 0px) + 6px)); }
         }
@@ -5407,10 +5461,68 @@
         .sh-err-btns { display: flex; justify-content: center; gap: 10px; margin-top: 12px; }
         .sh-err-btns button { padding: 6px 16px; border: 1px solid rgba(var(--fg-rgb), .25); border-radius: calc(16px * var(--radius-k)); background: none; color: var(--text-1); font-size: 13px; cursor: pointer; }
         .sh-err-btns button:first-child { border-color: transparent; background: var(--accent); color: var(--on-accent); }
-        .sh-prog { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); z-index: 3; height: 18px; cursor: pointer; }
-        .sh-prog::before, .sh-prog i { content: ''; position: absolute; left: 0; right: 0; bottom: 7px; height: 2px; }
+        /* 进度条:触控区 28px 高;按住能拖(拖的时候变粗 + 圆点 + 屏幕下方大号时间),电脑上指上去也变粗 */
+        .sh-prog { position: absolute; left: 0; right: 0; bottom: env(safe-area-inset-bottom, 0px); z-index: 3; height: 28px; cursor: pointer; touch-action: none; transition: opacity .2s; }
+        .sh-prog::before, .sh-prog i { content: ''; position: absolute; left: 0; right: 0; bottom: 9px; height: 2px; transition: height .15s; }
         .sh-prog::before { background: rgba(255, 255, 255, .2); }
         .sh-prog i { background: rgba(255, 255, 255, .9); transform-origin: left center; transform: scaleX(0); }
+        .sh-prog b { position: absolute; left: 0; bottom: 5px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px rgba(0, 0, 0, .5); opacity: 0; transition: opacity .15s; pointer-events: none; }
+        .sh-prog.scrub::before, .sh-prog.scrub i { height: 4px; }
+        .sh-prog.scrub b { opacity: 1; }
+        @media (hover: hover) {
+            .sh-prog:hover::before, .sh-prog:hover i { height: 4px; }
+            .sh-prog:hover b { opacity: 1; }
+        }
+        .sh-scrub { position: absolute; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 4; transform: translateX(-50%); font-size: 18px; color: rgba(255, 255, 255, .7); text-shadow: 0 1px 6px rgba(0, 0, 0, .8); white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+        .sh-scrub b { font-size: 30px; color: #fff; }
+        .shorts-page.sh-scrubbing .sh-fg { opacity: 0; }   /* 拖进度条时片名和按钮先让开(像抖音) */
+        /* 按住倍速:顶上一条提示;上滑锁定后提示留着,点它恢复正常速度 */
+        .sh-speed { position: absolute; left: 50%; top: 64px; z-index: 4; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 7px 16px; border: 0; border-radius: calc(18px * var(--radius-k)); background: rgba(0, 0, 0, .62); color: #fff; font-size: 13px; white-space: nowrap; pointer-events: none; }
+        .sh-speed b { font-size: 16px; font-variant-numeric: tabular-nums; }
+        .sh-speed span { color: rgba(255, 255, 255, .75); }
+        .sh-speed.locked { pointer-events: auto; cursor: pointer; }
+        .shorts-page.sh-has-speed .sh-note { top: 116px; }
+        /* 竖屏刷默认就是清屏:片名一集开头露 3 秒就淡掉(暂停时回来),顶上只剩返回和声音两个半透明小按钮 */
+        .sh-fg, .sh-top { transition: opacity .2s; }
+        .sh-info { transition: opacity .35s; }
+        .sh-info.dim { opacity: 0; pointer-events: none; }
+        /* 长按出来的播放器页(.sh-pm):手机上视频缩到上面 40vh 的播放框,下面是设置;宽屏电脑上视频在左,设置面板在右 420px。永远深色 */
+        .sh-vl { transition: top .25s ease, bottom .25s ease, height .25s ease, right .25s ease; }
+        .shorts-page.sh-pm-on .sh-vl { top: calc(52px + env(safe-area-inset-top, 0px)); bottom: auto; height: 40vh; transform: none; }
+        .shorts-page.sh-pm-on .sh-bg, .shorts-page.sh-pm-on .sh-fg, .shorts-page.sh-pm-on .sh-top, .shorts-page.sh-pm-on > .sh-prog, .shorts-page.sh-pm-on .sh-speed, .shorts-page.sh-pm-on > .sh-center { display: none; }
+        .sh-pm { position: absolute; inset: 0; z-index: 5; pointer-events: none; color: #fff; }
+        .sh-pm > * { pointer-events: auto; }
+        .sh-pm-head { position: absolute; left: 0; right: 0; top: 0; height: calc(52px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) 8px 0; display: flex; align-items: center; gap: 8px; background: #000; }
+        .sh-pm-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+        .sh-pm-t b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-display); font-size: 15px; }
+        .sh-pm-t span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: rgba(255, 255, 255, .6); }
+        .sh-pm-video { position: absolute; left: 0; right: 0; top: calc(52px + env(safe-area-inset-top, 0px)); height: 40vh; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .sh-pmp { position: absolute; left: 0; right: 0; top: calc(52px + env(safe-area-inset-top, 0px) + 40vh); bottom: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+            padding: 12px 14px calc(18px + env(safe-area-inset-bottom, 0px)); background: #111; animation: shUp .22s ease-out; }
+        .sh-pm-tr { display: flex; align-items: center; gap: 12px; }
+        .sh-pm-play { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(var(--sh-acc-rgb), .9); color: var(--sh-on-acc); font-size: 17px; cursor: pointer; }
+        .sh-pm-time { font-size: 14px; color: rgba(255, 255, 255, .8); font-variant-numeric: tabular-nums; }
+        .sh-pmp .sh-pm-prog { position: relative; left: auto; right: auto; bottom: auto; margin: 4px 0 2px; }
+        .sh-pm-sec { margin-top: 14px; }
+        .sh-pm-l { display: block; margin-bottom: 8px; font-size: 13px; color: rgba(255, 255, 255, .6); }
+        .sh-pm-l em { font-style: normal; margin-left: 6px; color: rgba(255, 255, 255, .4); }
+        .sh-pm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .sh-pm-chips button { height: 32px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, .18); border-radius: calc(16px * var(--radius-k)); background: none; color: #fff; font-size: 13px; cursor: pointer; }
+        .sh-pm-chips button.on { border-color: transparent; background: rgba(var(--sh-acc-rgb), .9); color: var(--sh-on-acc); }
+        .sh-pmp .sh-dr-grid { overflow: visible; }
+        .sh-pmp .sh-dr-grid button { background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .85); }
+        .sh-pmp .sh-dr-grid button.on { background: var(--sh-acc); color: var(--sh-on-acc); }
+        .sh-pm-acts { display: flex; gap: 10px; margin-top: 18px; }
+        .sh-pm-acts button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px; border: 0; border-radius: calc(12px * var(--radius-k)); background: rgba(255, 255, 255, .06); color: #fff; font-size: 12px; cursor: pointer; }
+        .sh-pm-acts button i { font-size: 18px; }
+        .sh-pm-acts button.on i { color: var(--sh-acc); }
+        .sh-pm-tip { margin-top: 16px; font-size: 12px; color: rgba(255, 255, 255, .4); text-align: center; }
+        @media (min-width: 900px) and (orientation: landscape) {
+            .shorts-page.sh-pm-on .sh-vl { top: 0; bottom: 0; height: auto; right: 420px; }
+            .sh-pm-video { top: 0; bottom: 0; height: auto; right: 420px; }
+            .sh-pm-head { left: auto; width: 420px; background: #111; border-bottom: 1px solid rgba(255, 255, 255, .06); }
+            .sh-pmp { left: auto; width: 420px; top: calc(52px + env(safe-area-inset-top, 0px)); }
+        }
         .sh-drawer-mask { position: absolute; inset: 0; z-index: 6; background: rgba(0, 0, 0, .35); touch-action: pan-y; }
         .sh-drawer {
             position: absolute; left: 0; right: 0; bottom: 0; max-width: 620px; max-height: 62%; margin: 0 auto; display: flex; flex-direction: column;
@@ -5429,6 +5541,39 @@
         .sh-dr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 4px; }
         .sh-dr-grid button { height: 40px; border: 1px solid transparent; border-radius: calc(8px * var(--radius-k)); background: rgba(var(--fg-rgb), .08); color: var(--text-3); font-size: 14px; cursor: pointer; }
         .sh-dr-grid button.on { background: var(--accent); color: var(--on-accent); }
+        /* 🖱️ 电脑(鼠标)上:根上 .sh-desk(组件按 (hover: hover) and (pointer: fine) 挂,电视 / 手机没有)。不自动清屏;
+           视频那一列右边一列按钮(收藏 / 选集 / 分享 / 设置 / 完整播放),页面右边缘上一部 / 下一部,底下一条播放条(播放 · 时间 | 倍速 · 静音 · 清屏 · 全屏),
+           进度细条贴在播放条上面。「清屏」(根上 .sh-clean-on)把这些都收起来,只剩右下角「退出清屏」 */
+        .shorts-page.sh-desk .sh-info { bottom: 74px; }
+        .shorts-page.sh-desk .sh-side { bottom: 84px; }
+        .shorts-page.sh-desk .sh-top-mute { display: none; }   /* 静音在下面的播放条上 */
+        .shorts-page.sh-desk > .sh-prog { left: 50%; right: auto; width: min(620px, 100%); bottom: 44px; transform: translateX(-50%); }
+        .shorts-page.sh-desk .sh-scrub { bottom: 118px; }
+        @media (min-width: 960px) {
+            .shorts-page.sh-desk .sh-info { right: 14px; }
+            .shorts-page.sh-desk .sh-side { right: -84px; bottom: 74px; }   /* 宽屏:按钮列放到视频那一列外面 */
+        }
+        .sh-dk-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(to top, rgba(0, 0, 0, .62), rgba(0, 0, 0, .28) 50%, transparent); pointer-events: none; }
+        .sh-dk-bar { position: absolute; left: 50%; bottom: 0; z-index: 3; width: min(620px, 100%); height: 50px; padding: 0 8px 6px; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; color: #fff; }
+        .sh-dk-sp { flex: 1; }
+        .sh-dk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 9px; border: 0; border-radius: calc(19px * var(--radius-k)); background: none; color: #fff; font-size: 16px; cursor: pointer; transition: background .15s, color .15s; }
+        .sh-dk-btn.on { color: var(--sh-acc); }
+        .sh-dk-time { margin-left: 4px; font-size: 13px; color: rgba(255, 255, 255, .86); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .sh-dk-rate { min-width: 50px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .sh-dk-ratew { position: relative; flex: none; }
+        .sh-dk-rates { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); display: flex; flex-direction: column-reverse; gap: 2px; padding: 6px; border-radius: calc(12px * var(--radius-k)); background: rgba(22, 22, 24, .95); box-shadow: 0 6px 24px rgba(0, 0, 0, .45); }
+        .sh-dk-rates button { width: 66px; height: 30px; border: 0; border-radius: calc(8px * var(--radius-k)); background: none; color: rgba(255, 255, 255, .88); font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+        .sh-dk-rates button.on { background: rgba(var(--sh-acc-rgb), .9); color: var(--sh-on-acc); }
+        .sh-dk-nav { position: absolute; right: 24px; top: 50%; z-index: 3; transform: translateY(-50%); display: flex; flex-direction: column; gap: 14px; }
+        .sh-dk-nav button { width: 46px; height: 46px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 17px; cursor: pointer; transition: background .15s, opacity .15s; }
+        .sh-dk-nav button:disabled { opacity: .25; cursor: default; }
+        @media (max-width: 779px) { .sh-dk-nav { display: none; } }   /* 窄窗口会压到按钮列上;滚轮 / ↑↓ 照样换 */
+        .sh-dk-unclean { position: absolute; right: 20px; bottom: 20px; z-index: 3; display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: calc(16px * var(--radius-k)); background: rgba(0, 0, 0, .5); color: rgba(255, 255, 255, .88); font-size: 13px; cursor: pointer; opacity: .7; transition: opacity .15s, background .15s; }
+        @media (hover: hover) {
+            .sh-dk-btn:hover, .sh-dk-rates button:not(.on):hover, .sh-dk-nav button:not(:disabled):hover { background: rgba(255, 255, 255, .16); }
+            .sh-dk-unclean:hover { opacity: 1; background: rgba(0, 0, 0, .7); }
+        }
+        .shorts-page.sh-clean-on .sh-info, .shorts-page.sh-clean-on .sh-side, .shorts-page.sh-clean-on .sh-top, .shorts-page.sh-clean-on > .sh-prog { visibility: hidden; opacity: 0; pointer-events: none; }
         /* 🎨 各风格的小差别(颜色本身都走变量) */
         html[data-tone="light"] .sh-note { background: rgba(var(--bg-rgb), .94); color: var(--text-1); }
         html[data-style="mono"] .sh-btn.on i { background: var(--sh-acc); color: var(--sh-on-acc); }   /* 已收藏 = 白底黑心(白心和平时分不出) */
@@ -5445,6 +5590,8 @@
         html[data-style="neon"] .sh-err { border: 1px solid rgba(var(--neon-cyan-rgb), .3); }
         html[data-style="neon"] .sh-dr-lines button.on { box-shadow: 0 0 10px rgba(var(--accent-rgb), .55); }
         html[data-style="neon"] .sh-dr-grid button.on { box-shadow: 0 0 14px rgba(var(--neon-cyan-rgb), .7); }
+        html[data-style="neon"] .sh-dk-rates button.on { box-shadow: 0 0 10px rgba(var(--accent-rgb), .55); }
+        html[data-style="neon"] .sh-dk-rates { border: 1px solid rgba(var(--neon-cyan-rgb), .3); }
         html[data-style="film"] .sh-chip { font-family: var(--font-type); }
         html[data-style="film"] .sh-drawer { border-top: 1px solid rgba(var(--accent-rgb), .3); }
         html[data-style="magazine"] .sh-drawer { border-top: 3px solid var(--accent); }
@@ -7646,19 +7793,17 @@
             @pointerdown="onDown" @pointermove="onMove" @pointerup="onUp" @pointercancel="onUp" @wheel="onWheel" @click="onTap">
             <div class="sh-mv sh-bg" aria-hidden="true">
                 <div v-for="s in slides" :key="s.key" class="sh-slide" :style="{ top: (s.off * 100) + '%' }">
-                    <template v-if="s.it && s.it.pic">
-                        <div class="sh-pbg" :style="{ backgroundImage: 'url(' + JSON.stringify(s.it.pic) + ')' }"></div>
-                        <div class="sh-pic" :style="{ backgroundImage: 'url(' + JSON.stringify(s.it.pic) + ')' }"></div>
-                    </template>
+                    <div v-if="s.it && s.it.pic" class="sh-pic" :class="{ off: s.off === 0 && !coverOn }" :style="{ backgroundImage: 'url(' + JSON.stringify(s.it.pic) + ')' }"></div>
                 </div>
             </div>
             <div class="sh-mv sh-vl" :class="{ ready: vReady }">
                 <video ref="v" playsinline webkit-playsinline x5-playsinline preload="auto"></video>
             </div>
+            <div class="sh-dk-shade" v-if="desk && !clean && !pm" aria-hidden="true"></div>
             <div class="sh-mv sh-fg">
                 <div v-for="s in slides" :key="s.key" class="sh-slide" :style="{ top: (s.off * 100) + '%' }">
                     <div class="sh-inner" v-if="s.it">
-                        <div class="sh-info">
+                        <div class="sh-info" :class="{ dim: s.off === 0 && !infoOn && !desk }">
                             <div class="sh-title">{{ s.it.title }}</div>
                             <div class="sh-meta">
                                 <span class="sh-ep">第 {{ (s.off === 0 ? epIdx : startEpOf(s.it)) + 1 }} 集 / 共 {{ s.off === 0 ? curEps.length : epCountOf(s.it) }} 集</span>
@@ -7666,12 +7811,17 @@
                             </div>
                             <div class="sh-blurb" v-if="s.it.blurb">{{ s.it.blurb }}</div>
                         </div>
-                        <div class="sh-side" v-if="s.off === 0">
-                            <button type="button" class="sh-btn" @click.stop="drawer = true" aria-label="选集"><i class="fas fa-list-ol" aria-hidden="true"></i><span>选集</span></button>
-                            <button v-if="favOk" type="button" class="sh-btn" :class="{ on: favOn }" @click.stop="fav()" :aria-label="favOn ? '取消收藏' : '收藏'">
+                        <!-- 右侧按钮给电视遥控器(没法长按)和电脑(鼠标,desk);手机是清屏竖屏,设置都在长按出来的播放器页里。
+                             电脑上的顺序:收藏 / 选集 / 分享 / 设置(= 播放器页)/ 完整播放;电视上的顺序照旧(选集在最上面,遥控器右键先落到它) -->
+                        <div class="sh-side" v-if="s.off === 0 && ($root.isTVMode || desk)">
+                            <button v-if="favOk && desk" type="button" class="sh-btn sh-b-fav" :class="{ on: favOn }" @click.stop="fav()" :aria-label="favOn ? '取消收藏' : '收藏'">
                                 <i class="fas fa-heart" aria-hidden="true"></i><span>{{ favOn ? '已收藏' : '收藏' }}</span></button>
-                            <button type="button" class="sh-btn" @click.stop="share()" aria-label="分享"><i class="fas fa-share" aria-hidden="true"></i><span>分享</span></button>
-                            <button type="button" class="sh-btn" @click.stop="full()" aria-label="完整播放"><i class="fas fa-up-right-and-down-left-from-center" aria-hidden="true"></i><span>完整播放</span></button>
+                            <button type="button" class="sh-btn sh-b-eps" @click.stop="drawer = true" aria-label="选集"><i class="fas fa-list-ol" aria-hidden="true"></i><span>选集</span></button>
+                            <button v-if="favOk && !desk" type="button" class="sh-btn sh-b-fav" :class="{ on: favOn }" @click.stop="fav()" :aria-label="favOn ? '取消收藏' : '收藏'">
+                                <i class="fas fa-heart" aria-hidden="true"></i><span>{{ favOn ? '已收藏' : '收藏' }}</span></button>
+                            <button type="button" class="sh-btn sh-b-share" @click.stop="share()" aria-label="分享"><i class="fas fa-share" aria-hidden="true"></i><span>分享</span></button>
+                            <button v-if="desk" type="button" class="sh-btn sh-b-set" @click.stop="pmOpen()" aria-label="设置" title="倍速 · 线路 · 选集(P)"><i class="fas fa-sliders" aria-hidden="true"></i><span>设置</span></button>
+                            <button type="button" class="sh-btn sh-b-full" @click.stop="full()" aria-label="完整播放"><i class="fas fa-up-right-and-down-left-from-center" aria-hidden="true"></i><span>完整播放</span></button>
                         </div>
                     </div>
                     <div class="sh-inner sh-empty" v-else-if="s.i >= items.length">
@@ -7682,12 +7832,18 @@
             </div>
             <div class="sh-top">
                 <button type="button" class="sh-ibtn" @click.stop="back()" aria-label="返回"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>
-                <span class="sh-top-t">短剧</span>
-                <button type="button" class="sh-ibtn" @click.stop="toggleMute()" :aria-label="muted ? '打开声音' : '静音'">
+                <button type="button" class="sh-ibtn sh-top-mute" @click.stop="toggleMute()" :aria-label="muted ? '打开声音' : '静音'">
                     <i :class="['fas', muted ? 'fa-volume-xmark' : 'fa-volume-high']" aria-hidden="true"></i></button>
             </div>
             <div class="sh-note" v-if="note">{{ note }}</div>
             <button type="button" class="sh-unmute" v-if="needTap" @click.stop="toggleMute()"><i class="fas fa-volume-xmark" aria-hidden="true"></i> 点一下打开声音</button>
+            <div class="sh-speed" v-if="speedOn" :class="{ locked: !holdRate }" @pointerdown.stop @click.stop="holdRate || unlockRate()"
+                :role="holdRate ? null : 'button'" :aria-label="holdRate ? null : '恢复正常速度'">
+                <i :class="['fas', (!holdRate || holdLocked) ? 'fa-lock' : 'fa-forward']" aria-hidden="true"></i>
+                <b>{{ rateText(holdRate || lockRate) }}</b>
+                <span v-if="holdRate">{{ holdLocked ? '已锁定，松手保持' : '左右滑调速 · 上滑锁定' }}</span>
+                <span v-else>点这里恢复正常速度</span>
+            </div>
             <div class="sh-center" v-if="cur">
                 <div class="sh-err" v-if="err">
                     <div>{{ err }}</div>
@@ -7696,7 +7852,72 @@
                 <div class="sh-spin" v-else-if="loading"></div>
                 <i class="fas fa-play sh-play-ic" v-else-if="paused" aria-hidden="true"></i>
             </div>
-            <div class="sh-prog" ref="prog" @click.stop="seekBar" @pointerdown.stop aria-hidden="true"><i ref="bar"></i></div>
+            <div class="sh-prog" ref="prog" :class="{ scrub: !!scrub && !pm }" @click.stop @pointerdown.stop="scrubDown($event, 'prog')" @pointermove="scrubMove" @pointerup="scrubUp" @pointercancel="scrubUp" aria-hidden="true"><i ref="bar"></i><b ref="knob"></b></div>
+            <div class="sh-scrub" v-if="scrub && !pm"><b>{{ scrub.t }}</b> / {{ scrub.d }}</div>
+            <!-- 🖱️ 电脑(鼠标)上才有:右边缘上一部 / 下一部、底下播放条(播放 · 时间 | 倍速 · 静音 · 清屏 · 全屏);清屏时只剩右下角「退出清屏」 -->
+            <template v-if="desk && !pm">
+                <div class="sh-dk-nav" v-if="!clean">
+                    <button type="button" class="sh-arw-up" @click.stop="go(-1)" :disabled="idx <= 0" aria-label="上一部" title="上一部(↑)"><i class="fas fa-chevron-up" aria-hidden="true"></i></button>
+                    <button type="button" class="sh-arw-dn" @click.stop="go(1)" :disabled="done && idx >= items.length - 1" aria-label="下一部" title="下一部(↓)"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                </div>
+                <div class="sh-dk-bar" v-if="!clean" @click.stop>
+                    <button type="button" class="sh-dk-btn sh-dk-play" @click.stop="togglePause()" :aria-label="paused ? '播放' : '暂停'" :title="paused ? '播放(空格)' : '暂停(空格)'"><i :class="['fas', paused ? 'fa-play' : 'fa-pause']" aria-hidden="true"></i></button>
+                    <span class="sh-dk-time">{{ pmTime || '00:00 / --:--' }}</span>
+                    <span class="sh-dk-sp"></span>
+                    <span class="sh-dk-ratew">
+                        <button type="button" class="sh-dk-btn sh-dk-rate" :class="{ on: !!lockRate }" @click.stop="rateOpen = !rateOpen" aria-label="倍速" title="倍速" :aria-expanded="rateOpen ? 'true' : 'false'">{{ rateText(lockRate || 1) }}</button>
+                        <span class="sh-dk-rates" v-if="rateOpen" role="menu" aria-label="倍速">
+                            <button v-for="r in pmRates" :key="r" type="button" role="menuitemradio" :aria-checked="(lockRate || 1) === r ? 'true' : 'false'" :class="{ on: (lockRate || 1) === r }" @click.stop="setRate(r); rateOpen = false">{{ rateText(r) }}</button>
+                        </span>
+                    </span>
+                    <button type="button" class="sh-dk-btn sh-dk-mute" @click.stop="toggleMute()" :aria-label="muted ? '打开声音' : '静音'" :title="muted ? '打开声音(M)' : '静音(M)'"><i :class="['fas', muted ? 'fa-volume-xmark' : 'fa-volume-high']" aria-hidden="true"></i></button>
+                    <button type="button" class="sh-dk-btn sh-dk-clean" @click.stop="toggleClean()" aria-label="清屏" title="清屏(C)"><i class="fas fa-eye-slash" aria-hidden="true"></i></button>
+                    <button type="button" class="sh-dk-btn sh-dk-fs" @click.stop="toggleFs()" :aria-label="fsOn ? '退出全屏' : '全屏'" :title="fsOn ? '退出全屏' : '全屏'"><i :class="['fas', fsOn ? 'fa-compress' : 'fa-expand']" aria-hidden="true"></i></button>
+                </div>
+                <button type="button" class="sh-dk-unclean" v-else @click.stop="toggleClean()" title="退出清屏(C)"><i class="fas fa-eye" aria-hidden="true"></i>退出清屏</button>
+            </template>
+            <!-- 长按画面中间出来的「播放器页」:视频缩进上面(电脑上在左边)的播放框里接着放,下面(右边)是进度、倍速、线路、选集、收藏分享完整播放 -->
+            <div class="sh-pm" v-if="pm && cur" @pointerdown.stop>
+                <div class="sh-pm-head">
+                    <button type="button" class="sh-ibtn" @click.stop="pmClose()" aria-label="回到竖屏刷" title="回到竖屏刷"><i class="fas fa-chevron-down" aria-hidden="true"></i></button>
+                    <div class="sh-pm-t"><b>{{ cur.title }}</b><span>第 {{ epIdx + 1 }} 集 / 共 {{ curEps.length }} 集<template v-if="cur.remarks"> · {{ cur.remarks }}</template></span></div>
+                    <button type="button" class="sh-ibtn" @click.stop="toggleMute()" :aria-label="muted ? '打开声音' : '静音'">
+                        <i :class="['fas', muted ? 'fa-volume-xmark' : 'fa-volume-high']" aria-hidden="true"></i></button>
+                </div>
+                <div class="sh-pm-video" @click.stop="togglePause()">
+                    <div class="sh-err" v-if="err">
+                        <div>{{ err }}</div>
+                        <div class="sh-err-btns"><button type="button" @click.stop="retry()">重试</button><button type="button" @click.stop="pmClose(); go(1)">下一部</button></div>
+                    </div>
+                    <div class="sh-spin" v-else-if="loading"></div>
+                    <i class="fas fa-play sh-play-ic" v-else-if="paused" aria-hidden="true"></i>
+                </div>
+                <div class="sh-pmp" @click.stop>
+                    <div class="sh-pm-tr">
+                        <button type="button" class="sh-pm-play" @click.stop="togglePause()" :aria-label="paused ? '播放' : '暂停'"><i :class="['fas', paused ? 'fa-play' : 'fa-pause']" aria-hidden="true"></i></button>
+                        <span class="sh-pm-time">{{ pmTime }}</span>
+                    </div>
+                    <div class="sh-prog sh-pm-prog" ref="pmprog" :class="{ scrub: !!scrub && pm }" @pointerdown.stop="scrubDown($event, 'pmprog')" @pointermove="scrubMove" @pointerup="scrubUp" @pointercancel="scrubUp" aria-hidden="true"><i ref="pmbar"></i><b ref="pmknob"></b></div>
+                    <div class="sh-pm-sec">
+                        <span class="sh-pm-l">倍速</span>
+                        <div class="sh-pm-chips"><button v-for="r in pmRates" :key="r" type="button" :class="{ on: (lockRate || 1) === r }" @click.stop="setRate(r)">{{ rateText(r) }}</button></div>
+                    </div>
+                    <div class="sh-pm-sec" v-if="curSrcs.length > 1">
+                        <span class="sh-pm-l">线路</span>
+                        <div class="sh-pm-chips"><button v-for="(x, i) in curSrcs" :key="x.site_key" type="button" :class="{ on: i === srcIdx }" @click.stop="pickSrc(i)">{{ x.site_name }}</button></div>
+                    </div>
+                    <div class="sh-pm-sec">
+                        <span class="sh-pm-l">选集 <em>共 {{ curEps.length }} 集</em></span>
+                        <div class="sh-dr-grid"><button v-for="(e, i) in curEps" :key="i" type="button" :class="{ on: i === epIdx }" @click.stop="pickEp(i)">{{ epNum(e.name, i) }}</button></div>
+                    </div>
+                    <div class="sh-pm-acts">
+                        <button v-if="favOk" type="button" :class="{ on: favOn }" @click.stop="fav()"><i class="fas fa-heart" aria-hidden="true"></i><span>{{ favOn ? '已收藏' : '收藏' }}</span></button>
+                        <button type="button" @click.stop="share()"><i class="fas fa-share" aria-hidden="true"></i><span>分享</span></button>
+                        <button type="button" @click.stop="full()"><i class="fas fa-up-right-and-down-left-from-center" aria-hidden="true"></i><span>完整播放</span></button>
+                    </div>
+                    <div class="sh-pm-tip">点左上角回到竖屏刷 · 竖屏时按住画面两侧 = 2 倍速</div>
+                </div>
+            </div>
             <div class="sh-drawer-mask" v-if="drawer && cur" @click.stop.self="drawer = false">
                 <div class="sh-drawer" role="dialog" aria-label="选集">
                     <div class="sh-dr-head">
@@ -7710,6 +7931,53 @@
                     <div class="sh-dr-grid">
                         <button v-for="(e, i) in curEps" :key="i" type="button" :class="{ on: i === epIdx }" @click.stop="pickEp(i)">{{ epNum(e.name, i) }}</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 🎞️「短剧」分类页(组件 DgShortsLib;放在 #app 外面,根应用不编译它):全部短剧按题材 / 最新最热 / 搜片名浏览,点一部进竖屏刷(接着刷同一个列表) -->
+    <template id="dg-shorts-lib-tpl">
+        <div class="sl-page" ref="page" role="dialog" aria-modal="true" aria-label="短剧" tabindex="-1">
+            <div class="sl-wrap">
+                <div class="sl-top">
+                    <button type="button" ref="back" class="btn btn-outline-secondary rounded-pill px-3 px-md-4 py-2 sl-back" @click="$emit('close')" aria-label="返回">
+                        <i class="fas fa-arrow-left me-0 me-md-2" aria-hidden="true"></i><span class="d-none d-md-inline">返回</span></button>
+                    <div class="sl-heading">
+                        <h2 class="sl-title">短剧</h2>
+                        <div class="sl-sub" v-if="cats.total">共 {{ cats.total }} 部<span style="white-space:nowrap"> · 分集 {{ cats.eps }} 部</span></div>
+                    </div>
+                    <button type="button" class="sl-swipe" @click="swipe()"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i><span>竖屏刷</span></button>
+                </div>
+                <div class="sl-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" v-model="qIn" @keydown.enter="doSearch()" @input="onQ()" placeholder="搜短剧片名" enterkeyhint="search" maxlength="30" aria-label="搜短剧片名">
+                    <button v-if="qIn" type="button" class="sl-q-x" @click="clearQ()" aria-label="清空"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+                </div>
+                <div class="sl-tabs" role="group" aria-label="题材">
+                    <button type="button" :class="{ on: !cat }" @click="setCat('')">全部</button>
+                    <button v-for="t in tabs" :key="t.k" type="button" :class="{ on: cat === t.k }" @click="setCat(t.k)">{{ t.l }}<small v-if="t.n">{{ t.n }}</small></button>
+                </div>
+                <div class="sl-sorts">
+                    <button type="button" :class="{ on: sort === 'new' }" @click="setSort('new')">最新更新</button>
+                    <button type="button" :class="{ on: sort === 'hot' }" @click="setSort('hot')">热门</button>
+                    <label class="sl-only"><input type="checkbox" :checked="onlyEps" @change="onlyEps = $event.target.checked; reload()"> 只看一集一集的</label>
+                </div>
+                <div class="sl-grid">
+                    <button v-for="(it, i) in items" :key="it.id" type="button" class="sl-card" @click="open(i)" :aria-label="it.title">
+                        <div class="sl-poster">
+                            <img :src="pic(it)" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" @error="picErr">
+                            <span v-if="it.remarks" class="sl-badge">{{ it.remarks }}</span>
+                            <span class="sl-eps">{{ it.whole ? '全集' : '共 ' + it.eps + ' 集' }}</span>
+                        </div>
+                        <div class="sl-name">{{ it.title }}</div>
+                    </button>
+                </div>
+                <div class="sl-foot" ref="foot">
+                    <div class="sh-spin" v-if="loading"></div>
+                    <template v-else-if="msg">{{ msg }} <button type="button" class="sl-retry" @click="loadMore()">再试一次</button></template>
+                    <template v-else-if="!items.length">{{ q ? '没找到「' + q + '」' : (cats.total ? '这个题材还没有短剧' : '短剧片库正在准备，过一会儿再来看看') }}</template>
+                    <template v-else-if="next == null">没有更多了</template>
                 </div>
             </div>
         </div>
@@ -7903,6 +8171,7 @@
                     <h3 class="mag-sec-h"><span>分类索引</span><small>按类型翻阅</small></h3>
                     <div class="mag-chips">
                         <button v-for="t in catTypes" :key="'mt-' + t.k" type="button" @click="openBrowse({ type: t.k, sel: {} })"><i :class="['fas', t.icon]" aria-hidden="true"></i> {{ t.l }}</button>
+                        <button type="button" @click="openShortsLib()"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i> 短剧</button>
                         <button type="button" class="all" @click="openCatDir()"><i class="fas fa-table-cells-large" aria-hidden="true"></i> 全部分类</button>
                     </div>
                 </section>
@@ -8194,6 +8463,8 @@
                 <!-- 📱 看短剧这一栏时给个入口:竖屏一部一部刷 -->
                 <button v-if="cal.cat === 'short' && calCats.length" type="button" class="cal-shorts-go" @click="openShorts()">
                     <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>竖屏刷短剧，一集一两分钟<i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+                <button v-if="cal.cat === 'short' && calCats.length" type="button" class="cal-shorts-go" @click="openShortsLib()">
+                    <i class="fas fa-table-cells" aria-hidden="true"></i>全部短剧，按题材找<i class="fas fa-chevron-right" aria-hidden="true"></i></button>
                 <div v-if="!calCats.length" class="cal-empty">这天资源站还没有更新</div>
                 <div class="scroll-container" v-else-if="!cal.open">
                     <button class="scroll-btn left" v-show="calCanScrollLeft" @click="scrollRowBy('calRow', -1)"
@@ -8325,6 +8596,8 @@
                         <button v-for="t in catTypes" :key="t.k" type="button" class="cat-tab"
                             :class="{ active: catNavType === t.k }" :aria-pressed="catNavType === t.k ? 'true' : 'false'"
                             @click="catNavSelect(t.k)"><i :class="['fas', t.icon]" aria-hidden="true"></i>{{ t.l }}</button>
+                        <!-- 🎞️ 短剧不在 TMDB 里:直接进「短剧」分类页(全部短剧按题材浏览) -->
+                        <button type="button" class="cat-tab cat-tab-shorts" @click="openShortsLib()"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i>短剧</button>
                     </div>
                     <div class="catnav-quick">
                         <button v-if="!hideRandomRow" type="button" class="catnav-q is-random" @click="catNavJump('random')">
@@ -8460,6 +8733,20 @@
                         @click="openBrowse({ type: h.type, sel: h.sel })">
                         <span class="catdir-tile-l">{{ h.l }}</span><i :class="['fas', h.icon]" aria-hidden="true"></i>
                     </button>
+                </div>
+            </section>
+            <!-- 🎞️ 短剧(不走 TMDB):按题材进「短剧」分类页 -->
+            <section class="catdir-card" aria-label="短剧">
+                <div class="catdir-card-head">
+                    <span class="catdir-card-icon"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i></span>
+                    <span class="catdir-card-title">短剧</span>
+                    <button type="button" class="catnav-all" @click="openShortsLib()">全部短剧<i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+                </div>
+                <div class="catnav-row">
+                    <span class="catnav-label">题材</span>
+                    <div class="catdir-chips">
+                        <button v-for="t in shortsTags" :key="t.k" type="button" class="cat-chip" @click="openShortsLib({ cat: t.k })">{{ t.l }}</button>
+                    </div>
                 </div>
             </section>
             <section class="catdir-card" v-for="t in catDir.types" :key="t.k" :aria-label="t.l">
@@ -9165,6 +9452,8 @@
         <!-- ★★★ 播放详情页 (影院布局) ★★★ -->
         <!-- 📱 短剧竖屏刷(组件 DgShorts,模板 #dg-shorts-tpl) -->
         <dg-shorts v-if="shortsOpen" ref="shortsComp" @close="closeShorts()"></dg-shorts>
+        <!-- 🎞️「短剧」分类页(组件 DgShortsLib,模板 #dg-shorts-lib-tpl) -->
+        <dg-shorts-lib v-if="shortsLibOpen" ref="shortsLib" @close="closeShortsLib()"></dg-shorts-lib>
         <div class="detail-overlay" :class="{ active: showDetail }">
             <div v-if="!previewLocked" class="close-btn" tabindex="1" role="button" aria-label="关闭" @click="closeDetail"
                 @keydown.enter="closeDetail"><i class="fas fa-times"></i></div>
@@ -9274,6 +9563,10 @@
                     </div>
                     <!-- 分享 / 投屏:未登录预览与试看时不显示(投屏到电视上播不计试看时长) -->
                     <div v-if="!previewLocked && !trial.on" style="display: flex; gap: 10px; align-items: center;">
+                        <!-- 📱 从竖屏刷「完整播放」进来的这一部:一键回到刚才那一集接着刷 -->
+                        <button v-if="shortsReturn && currentGroup.name === shortsReturn" class="btn-cast btn-back-shorts" tabindex="2" @click="backToShorts" aria-label="返回刷短剧">
+                            <i class="fas fa-mobile-screen-button"></i> 返回刷短剧
+                        </button>
                         <button class="btn-cast" tabindex="2" @click="openSharePanel" aria-label="分享">
                             <i class="fas fa-share-alt"></i> 分享
                         </button>
@@ -10406,13 +10699,25 @@
         //   预加载:当前这集缓冲够了(前面 ≥20s 或已缓冲到结尾)才去拉下一部(或下一集)的清单(+ clip 站预扫插播),不拉分片、不建第二个播放器。
         //   历史:看了 ≥20 秒 / 到第二集 / 本来就在历史里的才记(一扫而过的不进「继续观看」),记法和播放页一样(addToWatchHistory,时间按原时间轴)。
         window.DgShortsMem = { items: [], ids: new Set(), idx: 0, next: 0, done: false, at: 0 };
+        const DG_SHORTS_RATES = [1.5, 2, 3];   // 按住两侧倍速:按住 = 中间那档,左右滑换档
+        const DG_SHORTS_PM_RATES = [0.75, 1, 1.25, 1.5, 2, 3];   // 播放器页里的倍速档
+        // 「短剧」分类页的题材(与 lib/shorts-feed 的 TAGS 同键同名)
+        const DG_SHORTS_TAGS = [{ k: 'dushi', l: '都市' }, { k: 'guzhuang', l: '古装' }, { k: 'tianchong', l: '甜宠' }, { k: 'nixi', l: '逆袭' },
+            { k: 'chuanyue', l: '重生穿越' }, { k: 'xuanyi', l: '悬疑' }, { k: 'jiating', l: '家庭' }];
         window.DgShorts = {
             template: '#dg-shorts-tpl',
             emits: ['close'],
             data() {
                 const M = window.DgShortsMem;
                 return { items: M.items, idx: M.idx, epIdx: 0, srcIdx: 0, done: M.done, more: false, listMsg: '',
-                    loading: false, vReady: false, paused: false, muted: false, needTap: false, err: '', note: '', drawer: false };
+                    loading: false, vReady: false, paused: false, muted: false, needTap: false, err: '', note: '', drawer: false,
+                    // coverOn:这部刚开始加载、画面还没出来(只有换「部」才垫封面,同一部换集不闪封面)
+                    // holdRate:按住时的倍速(0 = 没按住);holdLocked:按住时已上滑到锁定;lockRate:锁定的倍速(0 = 正常速度)
+                    // scrub:拖进度条时显示的 { t, d };pm:长按出来的播放器页开着;pmTime:播放器页上的「当前 / 总时长」
+                    // infoOn:片名那块露着(每集开头露 3 秒、暂停时露,其余时间清屏)
+                    // deskMq:鼠标设备((hover: hover) and (pointer: fine),变了跟着变);clean:电脑上点了「清屏」;rateOpen:播放条倍速小菜单开着;fsOn:浏览器全屏中
+                    coverOn: true, holdRate: 0, holdLocked: false, lockRate: 0, scrub: null, pm: false, pmTime: '', infoOn: true,
+                    deskMq: !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches), clean: false, rateOpen: false, fsOn: false };
             },
             computed: {
                 cur() { return this.items[this.idx] || null; },
@@ -10429,12 +10734,24 @@
                     const r = this.$root;
                     return !!(this.cur && r.favoritesEnabled && r._favFind({ name: this.cur.title, sources: this.curSrcs }));
                 },
+                // 顶上的倍速提示条:按住时 / 锁定了倍速时;电脑上锁定的倍速看播放条上的倍速按钮(亮主色),不再多一条
+                speedOn() { return !!(this.holdRate || (this.lockRate && !this.desk)); },
+                pmRates() { return DG_SHORTS_PM_RATES; },
+                // 🖱️ 电脑(鼠标)上:不自动清屏 + 右侧按钮列 + 上下一部 + 底部播放条(电视有自己的遥控器那一套,手机是长按 / 清屏那一套)
+                desk() { return this.deskMq && !this.$root.isTVMode; },
             },
             watch: {
-                note(v) { clearTimeout(this._noteT); if (v) this._noteT = setTimeout(() => { this.note = ''; }, 2600); },
+                note(v) { clearTimeout(this._noteT); if (v) this._noteT = setTimeout(() => { this.note = ''; }, v.length > 14 ? 4200 : 2600); },
+                // 页面根节点的 sh-anim / sh-drag 是直接改 classList 的,这几个也走 classList(用 :class 绑定会在重渲染时把它们冲掉)
+                pm(v) { const p = this.$refs.page; if (p) p.classList.toggle('sh-pm-on', !!v); if (v) this._updPmTime(); },
+                paused(v) { if (v) { clearTimeout(this._infoT); this.infoOn = true; } else this._flashInfo(2500); },
+                speedOn(v) { const p = this.$refs.page; if (p) p.classList.toggle('sh-has-speed', !!v); },
+                scrub(v) { const p = this.$refs.page; if (p) p.classList.toggle('sh-scrubbing', !!v); },
+                desk(v) { const p = this.$refs.page; if (p) p.classList.toggle('sh-desk', !!v); if (v) this._updPmTime(); else { this.clean = false; this.rateOpen = false; } },
+                clean(v) { const p = this.$refs.page; if (p) p.classList.toggle('sh-clean-on', !!v); if (v) this.rateOpen = false; },
             },
             mounted() {
-                this._s = { tok: 0, hls: null, cur: null, drag: null, anim: false, navigating: false, wd: 0, ld: 0, triage: 0,
+                this._s = { tok: 0, hls: null, cur: null, drag: null, anim: false, navigating: false, wd: 0, ld: 0, triage: 0, lpT: 0, scrub: null,
                     wheelAt: 0, wheelAcc: 0, wheelLock: false, clickBlock: 0, watched: 0, lastTU: 0, saveAt: 0, warmed: new Set(), warmBusy: false, failRun: 0, unbind: [] };
                 this._bindVideo();
                 this._onKeyFn = (e) => this.onKey(e);
@@ -10442,10 +10759,43 @@
                 this._onVisFn = () => { if (document.hidden) this._save(); };
                 document.addEventListener('visibilitychange', this._onVisFn);
                 try { this.$refs.page.focus({ preventScroll: true }); } catch (e) { }
+                // 鼠标设备(电脑):根上挂 .sh-desk;插拔鼠标 / 平板接触控板时跟着变
+                if (this.desk) this.$refs.page.classList.add('sh-desk');
+                if (window.matchMedia) {
+                    const mq = window.matchMedia('(hover: hover) and (pointer: fine)'), fn = () => { this.deskMq = mq.matches; };
+                    if (mq.addEventListener) { mq.addEventListener('change', fn); this._s.unbind.push(() => mq.removeEventListener('change', fn)); }
+                    else if (mq.addListener) { mq.addListener(fn); this._s.unbind.push(() => mq.removeListener(fn)); }
+                }
+                const onFs = () => { this.fsOn = !!(document.fullscreenElement || document.webkitFullscreenElement); };
+                ['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => { document.addEventListener(ev, onFs); this._s.unbind.push(() => document.removeEventListener(ev, onFs)); });
+                onFs();
+                // 头两次打开:提示一下手势(竖屏刷默认清屏,不提示不知道设置在哪);电脑上提示的是滚轮 / 键盘和右侧「设置」(单独记次数)
+                if (!this.$root.isTVMode) {
+                    try {
+                        const key = this.desk ? 'donggua_shorts_tip_pc' : 'donggua_shorts_tip';
+                        const tip = this.desk ? '滚轮 / ↑↓ 换一部 · 空格暂停 · 右侧「设置」有倍速和选集' : '长按画面：播放器和设置 · 按住两侧：2 倍速';
+                        const n = +localStorage.getItem(key) || 0;
+                        if (n < 2) { localStorage.setItem(key, String(n + 1)); this._tipT = setTimeout(() => { if (!this._dead && !this.pm) this.note = tip; }, 2500); }
+                    } catch (e) { }
+                }
                 const M = window.DgShortsMem;
-                if (M.items.length && Date.now() - M.at < 30 * 60e3) this._startCur();
-                else {   // 头一次 / 隔了半小时:拿一份新的(服务器 30 分钟一更新)
-                    M.items.splice(0); M.ids = new Set(); M.idx = 0; M.next = 0; M.done = false;
+                // 打开方式(根应用 openShorts(o) 留下的):o.list = 从「短剧」分类页点了一部(接着刷同一个列表);o.resume = 从播放页「返回刷短剧」(原样接着刷)
+                const o = this.$root._shortsOpts || null;
+                this.$root._shortsOpts = null;
+                const raw = Vue.markRaw || (x => x);
+                if (o && o.list && (o.list.items || []).length) {
+                    const L = o.list;
+                    // 经过响应式代理改(this.items 就是 M.items):直接改 M.items 这个原始数组,cur / slides 这些 computed 不会重算,还指着旧列表
+                    this.items.splice(0, this.items.length, ...L.items.map(x => raw(Object.assign({}, x))));
+                    M.ids = new Set(L.items.map(x => x.id));
+                    M.idx = Math.max(0, Math.min(L.items.length - 1, L.start | 0));
+                    M.next = L.next == null ? L.items.length : L.next; M.done = L.next == null; M.at = Date.now();
+                    M.src = Object.assign({}, L.args || {});
+                    this.idx = M.idx; this.done = M.done; this.listMsg = '';
+                    this._startCur();
+                } else if (M.items.length && Date.now() - M.at < 30 * 60e3 && ((o && o.resume) || !M.src)) this._startCur();
+                else {   // 头一次 / 隔了半小时 / 上次刷的是分类页的列表:拿一份新的(服务器 30 分钟一更新)
+                    this.items.splice(0); M.ids = new Set(); M.idx = 0; M.next = 0; M.done = false; M.src = null;
                     this.idx = 0; this.done = false;
                     this._loadMore().then(() => this._startCur());
                 }
@@ -10454,10 +10804,12 @@
                 this._save();
                 this._stop();
                 const S = this._s;
-                clearTimeout(S.ld); clearTimeout(this._noteT); clearTimeout(this._retryT); clearTimeout(this._skipT);
+                clearTimeout(S.ld); clearTimeout(S.lpT); clearTimeout(this._noteT); clearTimeout(this._retryT); clearTimeout(this._skipT); clearTimeout(this._infoT); clearTimeout(this._tipT);
                 S.unbind.forEach(f => { try { f(); } catch (e) { } });
                 window.removeEventListener('keydown', this._onKeyFn, true);
                 document.removeEventListener('visibilitychange', this._onVisFn);
+                // 播放条上点的全屏:关页(含「完整播放」)时退出来
+                if (S.fsMine && (document.fullscreenElement || document.webkitFullscreenElement)) { try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) { } }
                 window.DgShortsMem.idx = this.idx;
                 this._dead = true;
             },
@@ -10468,10 +10820,15 @@
                     if (this.more || M.done || this._dead) return;
                     this.more = true;
                     try {
-                        const r = await fetchT('/api/shorts/feed?offset=' + M.next + '&limit=8', null, 15000);
+                        // 从分类页进来的:接着拿同一个列表(同题材 / 排序 / 搜索),带线路(full=1);否则是竖屏刷的推荐流
+                        const A = M.src;
+                        const url = A ? '/api/shorts/list?full=1&limit=8&offset=' + M.next + ['cat', 'sort', 'q', 'only'].filter(k => A[k]).map(k => '&' + k + '=' + encodeURIComponent(A[k])).join('')
+                            : '/api/shorts/feed?offset=' + M.next + '&limit=8';
+                        const r = await fetchT(url, null, 15000);
                         const d = r.ok ? await r.json() : null;
                         if (this._dead) return;
                         if (!d || d.enabled === false) { this.listMsg = '短剧暂时没有开放'; M.done = this.done = true; return; }
+                        if (A && !d.total) { M.done = this.done = true; return; }   // 分类页的列表到头了
                         if (!d.total) {   // 服务器刚启动、片库还在拉(十几秒):过一会儿再要
                             this.listMsg = '短剧片库正在准备，稍等十几秒…';
                             this._tries = (this._tries || 0) + 1;
@@ -10495,6 +10852,7 @@
                 // 这部的线路:按广告分级(与播放页线路分组同一套,运行时降级也算上)→ 集数多的在前。
                 //   原生 HLS 通道剪不了插播:clip 站(如意/非凡的中插只能剪/跳)当「有插播」排
                 _srcs(it) {
+                    if (!it || !it.srcs) return [];   // 从「短剧」分类页带过来的卡片还没有线路(_ensureFull 去拿):别把空表缓存住
                     if (it._srcs) return it._srcs;
                     const r = this.$root, native = !!(window._dgPreferNativeHls || !(window.Hls && Hls.isSupported()));
                     const rank = s => { try { const p = r.srcProfile(s); const k = SRC_TIER_RANK[p.tier]; return (native && p.clip && k < SRC_TIER_RANK.insert) ? SRC_TIER_RANK.insert : k; } catch (e) { return 3; } };
@@ -10535,7 +10893,7 @@
                         return { name: k > 0 ? seg.slice(0, k) : '第' + (i + 1) + '集', url: k >= 0 ? seg.slice(k + 1) : seg };
                     }));
                 },
-                epCountOf(it) { const s = this._srcs(it)[0]; return s ? this._eps(s).length : 0; },
+                epCountOf(it) { if (!it.srcs) return it.eps || 0; const s = this._srcs(it)[0]; return s ? this._eps(s).length : 0; },
                 startEpOf(it) { try { return this._startOf(it).ei; } catch (e) { return 0; } },
                 epNum(name, i) {
                     const s = String(name || '');
@@ -10582,6 +10940,10 @@
                         if (!mine()) return;
                         S.cur.started = true; S.failRun = 0;
                         this.vReady = true; this.paused = false; this.err = ''; this._setLoading(false);
+                        this.coverOn = false;
+                        if (!S.cur.infoShown) { S.cur.infoShown = true; this._flashInfo(); }   // 这一集刚出画面:片名露 3 秒再清屏
+                        const r = this.holdRate || this.lockRate || 1;   // 换源 / 换集会把倍速重置成默认值:补回去
+                        if (v.playbackRate !== r) { try { v.playbackRate = r; } catch (e) { } }
                     });
                     on('play', () => { if (mine()) this.paused = false; });
                     on('pause', () => { if (mine() && S.cur.started && !v.ended) { this.paused = true; this._save(); } });
@@ -10631,11 +10993,41 @@
                 _cuts() { const c = this._s.cur, s = c && c.sess; return (s && s.result && !s.late && s.result.cuts && s.result.cuts.length) ? s.result.cuts : null; },
                 _toBase(t) { const c = this._cuts(); return (c && window.AdClipCore && isFinite(t)) ? AdClipCore.fromCutTime(t, c) : t; },
                 _toPlay(t) { const c = this._cuts(); return (c && window.AdClipCore && isFinite(t)) ? AdClipCore.toCutTime(t, c) : t; },
+                // 分类页带过来的卡片没有线路:按 id 拿整部,换掉列表里那一项(换成新对象,computed 才会重算)
+                _ensureFull(i) {
+                    const it = this.items[i];
+                    if (!it || it.srcs) return Promise.resolve(it || null);
+                    if (it._loading) return it._loading;
+                    const raw = Vue.markRaw || (x => x);
+                    return (it._loading = (async () => {
+                        try {
+                            const r = await fetchT('/api/shorts/item?id=' + encodeURIComponent(it.id), null, 12000);
+                            const d = r.ok ? await r.json() : null;
+                            if (!d || !(d.srcs || []).length || this._dead) return null;
+                            const full = raw(Object.assign({}, it, d, { _loading: null }));
+                            const j = this.items.indexOf(it);
+                            if (j >= 0) this.items.splice(j, 1, full);
+                            return full;
+                        } catch (e) { return null; } finally { it._loading = null; }
+                    })());
+                },
                 _startCur() {
                     if (!this.cur || this._dead) return;
+                    if (!this.cur.srcs) {   // 先把这一部的线路拿来再播
+                        const i = this.idx, tok = (this._fullTok = (this._fullTok || 0) + 1);
+                        this.coverOn = true; this.err = ''; this.vReady = false; this.loading = true;
+                        this._ensureFull(i).then(full => {
+                            if (this._dead || tok !== this._fullTok || this.idx !== i) return;
+                            this.loading = false;
+                            if (!full) { this.err = '这部短剧暂时打不开'; return; }
+                            this._startCur();
+                        });
+                        return;
+                    }
                     if (this._allBad(this.cur)) { const g = this._nextGood(this.idx, 1); if (g !== this.idx) { this.idx = g; window.DgShortsMem.idx = g; } }
                     const st = this._startOf(this.cur);
                     this.srcIdx = st.si; this.epIdx = st.ei; this._s.watched = 0;
+                    this.coverOn = true;
                     this._play({ seekTo: st.seek });
                     if (st.resumed && (st.ei > 0 || st.seek)) this.note = '接着上次看 第' + (st.ei + 1) + '集';
                 },
@@ -10658,6 +11050,9 @@
                     S.cur = { tok, it, src, ep, route, url, native, sess, retried: !!o.retried, fragRetried: !!o.fragRetried, seekTo: o.seekTo || 0, started: false, manifestOk: false };
                     this.vReady = false; this.err = ''; this.paused = false; this.loading = false; this._setLoading(true);
                     if (this.$refs.bar) this.$refs.bar.style.transform = 'scaleX(0)';
+                    this._drawBar(0);
+                    if (this.desk) this.pmTime = '00:00 / --:--';
+                    clearTimeout(this._infoT); this.infoOn = true;
                     v.muted = this.muted;
                     if (native) {
                         v.src = url;
@@ -10712,6 +11107,7 @@
                     const S = this._s, c = S.cur, v = this.$refs.v;
                     if (!c || c.tok !== S.tok) return;
                     c.manifestOk = true;
+                    if (this.desk) this._updPmTime();
                     if (!c.seekTo) return;
                     const t = this._toPlay(c.seekTo);
                     c.seekTo = 0;
@@ -10721,7 +11117,7 @@
                     const S = this._s, c = S.cur, v = this.$refs.v;
                     if (!c || c.tok !== S.tok) return;
                     const d = v.duration;
-                    if (this.$refs.bar && isFinite(d) && d > 0) this.$refs.bar.style.transform = 'scaleX(' + Math.min(1, v.currentTime / d).toFixed(4) + ')';
+                    if (!S.scrub && isFinite(d) && d > 0) { this._drawBar(v.currentTime / d); if (this.pm || this.desk) this._updPmTime(); }   // 正在拖进度条:条跟着手指,不跟视频
                     const now = Date.now();
                     if (S.lastTU && !v.paused) { const dt = (now - S.lastTU) / 1000; if (dt > 0 && dt < 2) S.watched += dt; }
                     S.lastTU = now;
@@ -10827,8 +11223,10 @@
                     let src = c.src, ep = null;
                     if (isFinite(d) && d - v.currentTime < 30 && this.epIdx + 1 < this.curEps.length) ep = this.curEps[this.epIdx + 1];
                     else {
-                        const nx = this.items[this.idx + 1 < this.items.length ? this._nextGood(this.idx + 1, 1) : -1];
+                        const ni = this.idx + 1 < this.items.length ? this._nextGood(this.idx + 1, 1) : -1;
+                        const nx = this.items[ni];
                         if (!nx) return;
+                        if (!nx.srcs) { this._ensureFull(ni); return; }   // 分类页带过来的:先把下一部的线路拿好,下一轮再预拉清单
                         const st = this._startOf(nx);
                         src = this._srcs(nx)[st.si];
                         ep = src && this._eps(src)[st.ei];
@@ -10880,7 +11278,7 @@
                 go(dir) {
                     const S = this._s, page = this.$refs.page;
                     if (S.anim || !page) return;
-                    this.drawer = false;
+                    this.drawer = false; this.rateOpen = false;
                     let to = this.idx + dir;
                     if (to >= 0 && to < this.items.length) {
                         const g = this._nextGood(to, dir);
@@ -10921,14 +11319,82 @@
                 },
                 onDown(e) {
                     const S = this._s;
-                    if (S.anim || this.drawer || (e.button != null && e.button > 0)) return;
-                    if (e.target && e.target.closest && e.target.closest('.sh-drawer-mask, .sh-prog')) return;
-                    S.drag = { id: e.pointerId, y0: e.clientY, x0: e.clientX, dy: 0, moved: false, lastY: e.clientY, lastT: performance.now(), vy: 0 };
+                    if (S.anim || this.drawer || this.pm || (e.button != null && e.button > 0)) return;
+                    if (e.target && e.target.closest && e.target.closest('.sh-drawer-mask, .sh-prog, .sh-speed, .sh-pm, .sh-side, .sh-dk-nav, .sh-dk-bar, .sh-dk-unclean')) return;
+                    S.drag = { id: e.pointerId, y0: e.clientY, x0: e.clientX, cx: e.clientX, cy: e.clientY, dy: 0, moved: false, lastY: e.clientY, lastT: performance.now(), vy: 0, hold: null };
+                    // 按住不动(不在按钮上):两侧(左右各 1/4)约 0.4 秒 → 倍速;中间约 0.45 秒 → 播放器页(设置都在里面)。先动了就是翻页
+                    clearTimeout(S.lpT);
+                    const onBtn = e.target && e.target.closest && e.target.closest('button, a, .sh-top');
+                    if (!onBtn && this.cur && !this.err && !this.$root.isTVMode) {
+                        const id = e.pointerId, rc = this.$refs.page.getBoundingClientRect(), rel = (e.clientX - rc.left) / (rc.width || 1);
+                        if (rel < 0.25 || rel > 0.75) S.lpT = setTimeout(() => this._holdStart(id), 380);
+                        else S.lpT = setTimeout(() => this._pmLong(id), 450);
+                    }
                 },
+                // ---------- 长按中间:播放器页 ----------
+                _pmLong(id) {
+                    const S = this._s, d = S.drag;
+                    if (!d || d.id !== id || d.moved || S.anim || this.drawer || !this.cur) return;
+                    S.drag = null;
+                    S.clickBlock = Date.now();   // 松手那一下的 click 不算点按(不暂停)
+                    this.pmOpen();
+                },
+                pmOpen() {
+                    if (!this.cur) return;
+                    this.drawer = false; this.holdRate = 0; this.holdLocked = false; this.rateOpen = false;
+                    this.pm = true;
+                },
+                pmClose() { this.pm = false; try { this.$refs.page.focus({ preventScroll: true }); } catch (e) { } },
+                _updPmTime() {
+                    const v = this.$refs.v;
+                    if (!v) return;
+                    const d = isFinite(v.duration) && v.duration > 0 ? v.duration : 0;
+                    this.pmTime = this._fmt(this._s.scrub && d ? this._s.scrub.p * d : v.currentTime) + ' / ' + (d ? this._fmt(d) : '--:--');
+                },
+                setRate(r) { this.lockRate = r === 1 ? 0 : r; this._applyRate(r); },
+                // 片名那块:露 ms 毫秒后淡掉(暂停时一直露着)
+                _flashInfo(ms) {
+                    clearTimeout(this._infoT);
+                    this.infoOn = true;
+                    this._infoT = setTimeout(() => { if (!this.paused && !this._dead) this.infoOn = false; }, ms || 3000);
+                },
+                // ---------- 按住倍速(抖音式):按住 2×,左右滑 1.5× / 2× / 3×,上滑锁定(松手保持),顶上提示条点一下恢复 ----------
+                _holdStart(id) {
+                    const S = this._s, d = S.drag, v = this.$refs.v, page = this.$refs.page;
+                    if (!d || d.id !== id || d.moved || !v || v.paused || !S.cur || !S.cur.started || S.anim || this.drawer) return;
+                    d.hold = { x0: d.cx, y0: d.cy, idx: 1 };
+                    try { page.setPointerCapture(id); } catch (x) { }
+                    this.holdLocked = false;
+                    this.holdRate = DG_SHORTS_RATES[1];
+                    this._applyRate(this.holdRate);
+                },
+                _holdMove(d) {
+                    const h = d.hold, R = DG_SHORTS_RATES;
+                    const idx = Math.max(0, Math.min(R.length - 1, 1 + Math.round((d.cx - h.x0) / 80)));
+                    const dy = d.cy - h.y0;
+                    if (dy < -70) this.holdLocked = true;
+                    else if (dy > -40) this.holdLocked = false;
+                    if (idx !== h.idx) { h.idx = idx; this.holdRate = R[idx]; this._applyRate(this.holdRate); }
+                },
+                _holdEnd() {
+                    if (this.holdLocked) this.lockRate = this.holdRate === 1 ? 0 : this.holdRate;
+                    this.holdRate = 0; this.holdLocked = false;
+                    this._applyRate(this.lockRate || 1);
+                },
+                unlockRate() { this.lockRate = 0; this._applyRate(1); },
+                _applyRate(r) {
+                    const v = this.$refs.v;
+                    if (!v) return;
+                    try { v.playbackRate = r; v.defaultPlaybackRate = this.lockRate || 1; } catch (e) { }
+                },
+                rateText(r) { return (Math.round(r * 100) / 100) + '×'; },
                 onMove(e) {
                     const S = this._s, d = S.drag, page = this.$refs.page;
                     if (!d || e.pointerId !== d.id) return;
+                    d.cx = e.clientX; d.cy = e.clientY;
+                    if (d.hold) { this._holdMove(d); return; }
                     const dy = e.clientY - d.y0, dx = e.clientX - d.x0;
+                    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearTimeout(S.lpT);
                     if (!d.moved) {
                         if (Math.abs(dy) < 10 || Math.abs(dy) < Math.abs(dx)) { if (Math.abs(dx) > 30) S.drag = null; return; }
                         d.moved = true;
@@ -10947,6 +11413,8 @@
                     const S = this._s, d = S.drag, page = this.$refs.page;
                     if (!d || e.pointerId !== d.id) return;
                     S.drag = null;
+                    clearTimeout(S.lpT);
+                    if (d.hold) { S.clickBlock = Date.now(); this._holdEnd(); return; }   // 按住倍速松手:不算点按(不暂停)
                     if (!d.moved) return;   // 没拖 = 点按,交给 onTap
                     S.clickBlock = Date.now();
                     const H = page.clientHeight || 1;
@@ -10955,7 +11423,7 @@
                     else this._snap();
                 },
                 onWheel(e) {
-                    if (this.drawer || (e.target && e.target.closest && e.target.closest('.sh-drawer-mask'))) return;
+                    if (this.drawer || this.pm || (e.target && e.target.closest && e.target.closest('.sh-drawer-mask, .sh-pm'))) return;
                     e.preventDefault();
                     const S = this._s, now = Date.now(), gap = now - S.wheelAt;
                     S.wheelAt = now;
@@ -10967,7 +11435,8 @@
                 onTap(e) {
                     const S = this._s;
                     if (Date.now() - S.clickBlock < 400) return;
-                    if (e.target && e.target.closest && e.target.closest('button, a, .sh-drawer-mask, .sh-prog')) return;
+                    if (e.target && e.target.closest && e.target.closest('button, a, .sh-drawer-mask, .sh-prog, .sh-speed, .sh-pm, .sh-dk-bar, .sh-dk-nav')) return;
+                    if (this.rateOpen) { this.rateOpen = false; return; }   // 倍速小菜单开着:点画面先收起菜单(不暂停)
                     if (this.needTap) { this.toggleMute(); return; }
                     this.togglePause();
                 },
@@ -10987,12 +11456,52 @@
                         if (!this.muted && v.paused && this.cur && !this.err) this._tryPlay(this._s.tok);
                     }
                 },
-                seekBar(e) {
-                    const v = this.$refs.v, el = this.$refs.prog;
-                    if (!v || !el || !isFinite(v.duration) || !(v.duration > 0)) return;
-                    const rc = el.getBoundingClientRect();
-                    const p = Math.max(0, Math.min(1, (e.clientX - rc.left) / (rc.width || 1)));
-                    try { v.currentTime = p * v.duration; } catch (x) { }
+                // ---------- 进度条:点一下跳,按住拖(拖的时候条变粗、出圆点、屏幕下方显示时间,松手才真的跳) ----------
+                _drawBar(p) {   // 竖屏的细条和播放器页的条一起画
+                    p = Math.max(0, Math.min(1, p || 0));
+                    [['bar', 'knob', 'prog'], ['pmbar', 'pmknob', 'pmprog']].forEach(([b, k, w]) => {
+                        const bar = this.$refs[b], knob = this.$refs[k], el = this.$refs[w];
+                        if (bar) bar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+                        if (knob && el) knob.style.transform = 'translateX(' + (p * el.clientWidth).toFixed(1) + 'px)';
+                    });
+                },
+                _fmt(s) {
+                    s = Math.max(0, Math.floor(s || 0));
+                    const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60, two = n => (n < 10 ? '0' : '') + n;
+                    return (h ? h + ':' + two(m) : two(m)) + ':' + two(x);
+                },
+                _scrubAt(e, which) {
+                    const el = this.$refs[which || 'prog'], rc = el.getBoundingClientRect();
+                    return Math.max(0, Math.min(1, (e.clientX - rc.left) / (rc.width || 1)));
+                },
+                scrubDown(e, which) {
+                    const v = this.$refs.v, S = this._s;
+                    which = which || 'prog';
+                    if (!v || !this.cur || !this.$refs[which] || (e.button != null && e.button > 0) || !isFinite(v.duration) || !(v.duration > 0)) return;
+                    S.scrub = { id: e.pointerId, el: which, p: this._scrubAt(e, which) };
+                    try { this.$refs[which].setPointerCapture(e.pointerId); } catch (x) { }
+                    this._scrubShow();
+                },
+                scrubMove(e) {
+                    const S = this._s;
+                    if (!S.scrub || e.pointerId !== S.scrub.id) return;
+                    S.scrub.p = this._scrubAt(e, S.scrub.el);
+                    this._scrubShow();
+                },
+                scrubUp(e) {
+                    const S = this._s, sc = S.scrub, v = this.$refs.v;
+                    if (!sc || e.pointerId !== sc.id) return;
+                    S.scrub = null; this.scrub = null;
+                    S.clickBlock = Date.now();
+                    if (e.type !== 'pointercancel' && v && isFinite(v.duration) && v.duration > 0) { try { v.currentTime = Math.min(v.duration - 0.3, sc.p * v.duration); } catch (x) { } }
+                    else if (v && isFinite(v.duration) && v.duration > 0) this._drawBar(v.currentTime / v.duration);
+                    if (this.pm || this.desk) this._updPmTime();
+                },
+                _scrubShow() {
+                    const S = this._s, v = this.$refs.v, d = v.duration;
+                    this._drawBar(S.scrub.p);
+                    this.scrub = { t: this._fmt(S.scrub.p * d), d: this._fmt(d) };
+                    if (this.pm || this.desk) this._updPmTime();
                 },
                 onKey(e) {
                     if (e.defaultPrevented || this._dead) return;
@@ -11001,6 +11510,8 @@
                     const stop = () => { e.preventDefault(); e.stopImmediatePropagation(); };
                     if (k === 'Escape' || k === 'Esc' || k === 'GoBack' || k === 'BrowserBack') { stop(); this.back(); return; }
                     if (this.drawer) return;   // 选集面板:方向键 / 确认键交给焦点
+                    if (this.pm && (k === 'ArrowUp' || k === 'ArrowDown' || k === 'PageUp' || k === 'PageDown')) return;   // 播放器页开着不翻页
+                    if (k === 'p' && !this.$root.isTVMode) { stop(); if (this.pm) this.pmClose(); else this.pmOpen(); return; }
                     const side = (this.$root.isTVMode && t && t.closest) ? t.closest('.sh-side') : null;
                     if (side) {   // 遥控器:焦点在右侧按钮上 → 上下在按钮间走,左键回到画面,确认键按按钮(鼠标点过按钮留下的焦点不算,方向键照常翻页)
                         const bs = Array.from(side.querySelectorAll('button')), i = bs.indexOf(t);
@@ -11015,11 +11526,29 @@
                     else if (k === 'ArrowRight' || k === 'ArrowLeft') { stop(); const v = this.$refs.v; if (v && isFinite(v.duration)) { try { v.currentTime = Math.max(0, Math.min(v.duration - 0.5, v.currentTime + (k === 'ArrowRight' ? 5 : -5))); } catch (x) { } } }
                     else if (k === ' ' || k === 'Enter' || k === 'k' || k === 'MediaPlayPause') { stop(); this.togglePause(); }
                     else if (k === 'm') { stop(); this.toggleMute(); }
+                    else if ((k === 'c' || k === 'C') && this.desk && !this.pm && !e.ctrlKey && !e.metaKey && !e.altKey) { stop(); this.toggleClean(); }
                 },
-                // 返回:选集面板开着先关面板,否则关掉整页(根应用 closeShorts:退掉压的那条历史)
+                // 返回:选集面板开着先关面板,播放器页开着先回竖屏刷,(电脑)倍速小菜单 / 清屏先收起,否则关掉整页(根应用 closeShorts:退掉压的那条历史)
                 back() {
                     if (this.drawer) { this.drawer = false; return; }
+                    if (this.pm) { this.pmClose(); return; }
+                    if (this.rateOpen) { this.rateOpen = false; return; }
+                    if (this.clean) { this.clean = false; return; }
                     this.$emit('close');
+                },
+                // ---------- 🖱️ 电脑上的播放条:清屏 / 全屏 ----------
+                toggleClean() { this.clean = !this.clean; },
+                // 全屏整个网页(不只这一层:「链接已复制」这类提示、收藏的小卡片都在这一层外面,只全屏这一层就看不到了)
+                toggleFs() {
+                    const d = document, el = d.documentElement;
+                    try {
+                        if (d.fullscreenElement || d.webkitFullscreenElement) { (d.exitFullscreen || d.webkitExitFullscreen).call(d); return; }
+                        const req = el.requestFullscreen || el.webkitRequestFullscreen;
+                        if (!req) { this.note = '这个浏览器不支持全屏'; return; }
+                        this._s.fsMine = true;
+                        const p = req.call(el);
+                        if (p && p.catch) p.catch(() => { this._s.fsMine = false; });
+                    } catch (e) { }
                 },
                 pickEp(i) {
                     this.drawer = false;
@@ -11061,9 +11590,107 @@
                     const src = this.curSrcs[this.srcIdx] || this.curSrcs[0], ep = this.curEps[this.epIdx];
                     const item = { name: it.title, poster: it.pic, episode: ep ? ep.name : null, lastSourceKey: src ? src.site_key : null, groupData: this._groupData(it) };
                     const r = this.$root;
+                    r.shortsReturn = it.title;   // 播放页标题栏出「返回刷短剧」(只对这一部)
                     r.closeShorts();
                     r.$nextTick(() => r.playFromHistory(item));
                 },
+            },
+        };
+
+        // ========== 🎞️「短剧」分类页(DgShortsLib 组件,模板 #dg-shorts-lib-tpl;根应用 openShortsLib / closeShortsLib 开关) ==========
+        //   /api/shorts/cats 题材计数 + /api/shorts/list 分页(一页 30 部、卡片不带线路);点一部 → 竖屏刷从这一部开始,接着刷同一个列表
+        window.DgShortsLib = {
+            template: '#dg-shorts-lib-tpl',
+            emits: ['close'],
+            data() {
+                return { cats: { total: 0, eps: 0, tags: [] }, cat: '', sort: 'new', q: '', qIn: '', onlyEps: false, items: [], next: 0, loading: false, msg: '' };
+            },
+            computed: {
+                // 有片的题材才出(片库还没统计好时全出)
+                tabs() {
+                    const n = new Map((this.cats.tags || []).map(t => [t.k, t.n]));
+                    return DG_SHORTS_TAGS.map(t => ({ k: t.k, l: t.l, n: n.get(t.k) || 0 })).filter(t => !this.cats.total || t.n > 0 || t.k === this.cat);
+                },
+            },
+            created() {
+                const i = this.$root._slInit;
+                this.$root._slInit = null;
+                if (i && i.cat) this.cat = i.cat;
+                this._seq = 0;
+            },
+            mounted() {
+                this.loadCats();
+                this.loadMore();
+                if ('IntersectionObserver' in window && this.$refs.foot) {
+                    this._io = new IntersectionObserver(es => { if (es.some(x => x.isIntersecting)) this.loadMore(); }, { root: this.$refs.page, rootMargin: '0px 0px 600px 0px' });
+                    this._io.observe(this.$refs.foot);
+                }
+                this.$nextTick(() => {
+                    try { (this.$root.isTVMode ? this.$refs.back : this.$refs.page).focus({ preventScroll: true }); } catch (e) { }
+                });
+            },
+            beforeUnmount() { if (this._io) this._io.disconnect(); clearTimeout(this._qT); this._dead = true; },
+            methods: {
+                async loadCats() {
+                    try { const r = await fetchT('/api/shorts/cats', null, 12000); const d = r.ok ? await r.json() : null; if (d && d.enabled !== false && !this._dead) this.cats = d; } catch (e) { }
+                },
+                args() {
+                    const a = { sort: this.sort };
+                    if (this.cat) a.cat = this.cat;
+                    if (this.q) a.q = this.q;
+                    if (this.onlyEps) a.only = 'eps';
+                    return a;
+                },
+                reload() {
+                    this._seq++;
+                    this.items = []; this.next = 0; this.msg = ''; this.loading = false;
+                    try { this.$refs.page.scrollTop = 0; } catch (e) { }
+                    this.loadMore();
+                },
+                async loadMore() {
+                    if (this.loading || this.next == null || this._dead) return;
+                    const seq = this._seq, a = this.args();
+                    this.loading = true; this.msg = '';
+                    try {
+                        const qs = Object.keys(a).map(k => k + '=' + encodeURIComponent(a[k])).join('&');
+                        const r = await fetchT('/api/shorts/list?' + qs + '&limit=30&offset=' + this.next, null, 15000);
+                        const d = r.ok ? await r.json() : null;
+                        if (seq !== this._seq || this._dead) return;
+                        if (!d) { this.msg = '加载失败'; return; }
+                        if (d.enabled === false) { this.msg = '短剧暂时没有开放'; this.next = null; return; }
+                        const have = new Set(this.items.map(x => x.id)), raw = Vue.markRaw || (x => x);
+                        this.items.push(...(d.items || []).filter(x => x && x.id && !have.has(x.id)).map(x => raw(x)));
+                        this.next = d.next == null ? null : d.next;
+                    } catch (e) {
+                        if (seq === this._seq) this.msg = '网络不太好，加载失败';
+                    } finally {
+                        if (seq === this._seq) { this.loading = false; this.$nextTick(() => this._fill()); }
+                    }
+                },
+                // 一页没铺满一屏(屏幕很高 / 这个题材片少):IntersectionObserver 不会再触发 → 自己再拿一页
+                _fill() {
+                    const p = this.$refs.page, f = this.$refs.foot;
+                    if (!p || !f || this.next == null || this.loading || this.msg || this._dead) return;
+                    if (f.getBoundingClientRect().top < p.getBoundingClientRect().bottom + 600) this.loadMore();
+                },
+                setCat(k) { if (this.cat === k) return; this.cat = k; this.reload(); },
+                setSort(s) { if (this.sort === s) return; this.sort = s; this.reload(); },
+                onQ() { clearTimeout(this._qT); this._qT = setTimeout(() => this.doSearch(), 500); },
+                doSearch() {
+                    clearTimeout(this._qT);
+                    const q = String(this.qIn || '').replace(/\s+/g, '').slice(0, 30);
+                    if (q === this.q) return;
+                    this.q = q;
+                    this.reload();
+                },
+                clearQ() { this.qIn = ''; this.doSearch(); },
+                pic(it) { return it.pic ? String(it.pic).replace(/^http:\/\//i, 'https://') : this.$root.getPosterUrl(''); },
+                picErr(e) { const img = e.target; if (!img || img.dataset.fb) return; img.dataset.fb = '1'; img.src = this.$root.getPosterUrl(''); },
+                open(i) {
+                    if (!this.items[i]) return;
+                    this.$root.openShorts({ list: { items: this.items.slice(), start: i, next: this.next, args: this.args() } });
+                },
+                swipe() { this.$root.openShorts(); },
             },
         };
     </script>
@@ -15950,6 +16577,8 @@
                     // 📅 追剧日历:enabled null = 还没问过服务器 / false = 服务器没开;data = /api/calendar 的一周;open = 展开成网格
                     cal: { enabled: null, data: null, day: '', cat: '', loading: false, open: false, seen: false },
                     shortsOpen: false,   // 📱 短剧竖屏刷开着(组件 DgShorts;只在开 / 关时变,刷的过程中不碰根应用的响应式状态)
+                    shortsLibOpen: false,   // 🎞️「短剧」分类页开着(组件 DgShortsLib;翻页 / 换题材只重渲染它自己)
+                    shortsReturn: '',   // 从竖屏刷「完整播放」进播放页的那一部的片名:播放页标题栏出「返回刷短剧」
                     calMore: { key: '', items: [], total: 0, loading: false, done: false, err: false },
                     calCanScrollLeft: false,
                     calCanScrollRight: true,
@@ -16226,6 +16855,10 @@
                         self.closePlSheet();
                         return;
                     }
+                    if (!self.isTVMode && (e.key === 'Escape' || e.key === 'Esc') && self.shortsLibOpen && !self.shortsOpen && !self.showDetail && !self.showSettingsModal) {
+                        self.closeShortsLib();
+                        return;
+                    }
                     if (!self.isTVMode && (e.key === 'Escape' || e.key === 'Esc') && self.plPage.open && !self.searched && !self.showDetail && !self.showSettingsModal) {
                         if (self.plPage.editing) { self.plPage.editing = false; return; }
                         self.closePlaylist();
@@ -16269,6 +16902,13 @@
                         if (self.plPage && self.plPage.open) {
                             e.preventDefault();
                             self.closePlaylist();
+                            return false;
+                        }
+
+                        // 🎞️ 在「短剧」分类页：返回首页
+                        if (self.shortsLibOpen) {
+                            e.preventDefault();
+                            self.closeShortsLib();
                             return false;
                         }
 
@@ -16403,7 +17043,7 @@
                 // 🗂️ 安卓 App 的返回键(MainActivity.onBackPressed 注入的 JS,装好的 App 改不了)只认 showDetail / searched 两种状态:
                 //    分类浏览页 / 分类大全 / 短剧竖屏刷开着时对它说 searched = true → 它调 goHome() 退一层;否则在这几页按返回直接退出 App
                 window.vueApp = new Proxy(this, {
-                    get: (t, k) => (k === 'searched' ? !!(t.searched || (t.browse && t.browse.open) || t.catDirOpen || (t.plPage && t.plPage.open) || t.shortsOpen) : Reflect.get(t, k)),
+                    get: (t, k) => (k === 'searched' ? !!(t.searched || (t.browse && t.browse.open) || t.catDirOpen || (t.plPage && t.plPage.open) || t.shortsOpen || t.shortsLibOpen) : Reflect.get(t, k)),
                 });
 
                 // 定义 startApp 函数供密码验证成功后调用
@@ -16557,6 +17197,7 @@
                 trialLeftText() { return DgTrial.fmt(DgTrial.left(this.trial.limit, this.trial.used)); },
                 trialLimitText() { const s = this.trial.limit; return s % 60 ? DgTrial.fmt(s) : (s / 60) + ' 分钟'; },
                 catTypes() { return DgCatalog.TYPES; },
+                shortsTags() { return DG_SHORTS_TAGS; },
                 catDir() { return DgCatalog.directory(); },
                 catNavRows() { return DgCatalog.navRows(this.catNavType); },
                 catNavLabel() { const t = DgCatalog.typeOf(this.catNavType); return t ? t.l : ''; },
@@ -19877,6 +20518,12 @@
                             delete s0.dgShorts;
                             history.replaceState(Object.keys(s0).length ? s0 : null, '');
                         }
+                        // 🎞️「短剧」分类页开着时刷新:同上(否则之后再开分类页、按返回退到这条,会被当成分类页自己那条而关不掉)
+                        if (history.state && history.state.dgSl) {
+                            const s1 = Object.assign({}, history.state);
+                            delete s1.dgSl;
+                            history.replaceState(Object.keys(s1).length ? s1 : null, '');
+                        }
                         if (history.state && history.state.dgFrameShare) {
                             const s = Object.assign({}, history.state);
                             delete s.dgFrameShare;
@@ -19912,6 +20559,7 @@
                         return;
                     }
                     if (this._plOnPop()) return;   // 📚 片单页自己那条历史(见 _plOnPop)
+                    if (this._slOnPop()) return;   // 🎞️「短剧」分类页自己那条历史(见 _slOnPop)
                     if (this._frameShareBack) {
                         this._frameShareBack = 0;
                         if (this.showDetail && !this.frameShare.show) this.syncShareUrl();
@@ -20510,8 +21158,10 @@
 
                 // ========== 📱 短剧竖屏刷(组件 DgShorts,见 #dg-shorts-tpl 上面的脚本) ==========
                 //   打开压一条历史(手机返回键 / 侧滑返回 → _onHistPop 关);点 ← 关时自己退掉那条(_shortsBack 认领那次 popstate)
-                openShorts() {
+                //   o.list = { items, start, next, args }:从「短剧」分类页点一部,接着刷同一个列表;o.resume:从播放页「返回刷短剧」,原样接着刷
+                openShorts(o) {
                     if (this.shortsOpen || this.showDetail) return;
+                    this._shortsOpts = (o && (o.list || o.resume)) ? o : null;
                     this._shortsOpener = document.activeElement;
                     this._shortsBack = 0;
                     this.shortsOpen = true;
@@ -20539,10 +21189,60 @@
                     const c = this.$refs.shortsComp;
                     if (c && c.back) c.back(); else this.closeShorts();
                 },
+                // 播放页「返回刷短剧」(从竖屏刷点「完整播放」进来的那一部):关播放页、回到刚才那一集接着刷(看到哪集哪秒按观看记录接上)
+                backToShorts() {
+                    this.closeDetail();
+                    this.$nextTick(() => this.openShorts({ resume: true }));
+                },
+                // ========== 🎞️「短剧」分类页(组件 DgShortsLib):全部短剧按题材 / 最新最热 / 搜片名浏览,点一部进竖屏刷 ==========
+                //   整屏盖住首页(9000,同片单页:播放页 9999、竖屏刷 10010 都在它上面);打开压一条历史,返回键 / 侧滑返回关
+                openShortsLib(o) {
+                    if (this.shortsLibOpen) return;
+                    this._slInit = (o && o.cat) ? { cat: String(o.cat) } : null;   // 分类大全里点了某个题材:分类页直接停在那个题材
+                    this._slOpener = document.activeElement;
+                    this._slHomeY = window.scrollY || 0;
+                    this.shortsLibOpen = true;
+                    document.body.classList.add('sl-open');
+                    this._slPushHist();
+                },
+                closeShortsLib(fromPop) {
+                    if (!this.shortsLibOpen) return;
+                    this.shortsLibOpen = false;
+                    document.body.classList.remove('sl-open');
+                    if (this._slHist && !fromPop) { this._slBackAt = Date.now(); try { history.back(); } catch (e) { } }
+                    this._slHist = false;
+                    const y = this._slHomeY || 0, op = this._slOpener;
+                    this._slOpener = null;
+                    this.$nextTick(() => {
+                        this._jumpTo(y);
+                        if (this.isTVMode && op && op.isConnected) { try { op.focus({ preventScroll: true }); } catch (e) { } }
+                    });
+                },
+                _slPushHist() {
+                    try { history.pushState(Object.assign({}, history.state || {}, { dgSl: 1 }), ''); this._slHist = true; } catch (e) { this._slHist = false; }
+                },
+                // popstate(_onHistPop 在片单页之后问这里):返回 true = 这一下是分类页的。①自己 history.back() 退回那一下(1.5s 内);
+                //   ②退到了分类页那条下面:上面还盖着播放页 → 关播放页、把分类页那条压回去(一次退一层);否则关分类页
+                _slOnPop() {
+                    if (this._slBackAt) {
+                        const mine = Date.now() - this._slBackAt < 1500;
+                        this._slBackAt = 0;
+                        if (mine) return true;
+                    }
+                    if (!this.shortsLibOpen || !this._slHist) return false;
+                    const st = history.state;
+                    if (st && st.dgSl) return false;
+                    this._slHist = false;
+                    if (this.showDetail) { this.closeDetail(); this._slPushHist(); return true; }
+                    this.closeShortsLib(true);
+                    return true;
+                },
 
                 goHome() {
                     // 📱 短剧竖屏刷开着(安卓 App 返回键经 vueApp.searched 走到这里):先退一层
                     if (this.shortsOpen && !this.showDetail) { this._shortsBackKey(); return; }
+                    // 🎞️「短剧」分类页开着:关它回首页
+                    if (this.shortsLibOpen && !this.showDetail) { this.closeShortsLib(); return; }
                     // 📚 片单页开着:搜索结果 → 片单页,片单页 → 首页(一次退一层,同分类浏览页)
                     if (this.plPage.open && !this.showDetail) {
                         if (this.searched) this._plFromSearch();
@@ -23307,6 +24007,7 @@
                     document.body.classList.remove('detail-covered');   // 🌙 同步撤掉(侦听器要等下一次刷新):紧接着的 TV 焦点代码要能聚焦首页元素
                     document.documentElement.classList.remove('detail-open');
                     if (dp) dp.pause();
+                    this.shortsReturn = '';   // 「返回刷短剧」只管从竖屏刷进来的那一次
 
                     // 🧭 关闭详情：自增导航令牌，作废上一部剧残留的刷新/测速/回退定时器，
                     //    防止下次打开别的剧时被旧剧的异步回调串剧
@@ -28822,7 +29523,7 @@
                     }
                 }
             }
-        }).component('dg-comments', window.DgComments).component('dg-shorts', window.DgShorts).mount('#app');   // 💬 评论区组件(定义在 #app 后面那段 <script>)
+        }).component('dg-comments', window.DgComments).component('dg-shorts', window.DgShorts).component('dg-shorts-lib', window.DgShortsLib).mount('#app');   // 💬 评论区组件(定义在 #app 后面那段 <script>)
     </script>
 
     <!-- Register Service Worker with Auto-Update -->
