@@ -32,6 +32,22 @@
     TV.each = function (arr, fn) { for (var i = 0; i < (arr ? arr.length : 0); i++) fn(arr[i], i); };
     TV.assign = function (t) { for (var i = 1; i < arguments.length; i++) { var s = arguments[i]; if (s) for (var k in s) if (s.hasOwnProperty(k)) t[k] = s[k]; } return t; };
     TV.now = function () { return new Date().getTime(); };
+    // 手机 / iPad(没有遥控器,只能点):电视版在这类设备上要留一个「回手机版」的出口
+    TV.isPhone = (function () {
+        var ua = navigator.userAgent || '';
+        return /iphone|ipod|ipad|android.*mobile|windows phone/i.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+    })();
+    // 关闭 TV 模式 → 网页版(记住;手机顶栏的「手机版」和「我的」里的按钮共用)
+    TV.leaveTV = function () {
+        var back = TV.isPhone
+            ? '换回手机网页版。想再打开:网页版右下角 ⚙️ 设置 →「TV 模式」。'
+            : '换成网页版(要用触屏或鼠标操作)。想回来:网页版右下角 ⚙️ 设置 →「TV 模式」;用遥控器的话,在网页版按方向键也会提示换回电视版。';
+        TV.confirm('关闭 TV 模式?', back, '关闭 TV 模式', function () { location.href = '/?tv=0'; });
+    };
+    // 这台设备能不能跑网页版(同 index.html 启动检测的试法)
+    TV.canRunWeb = function () {
+        try { new Function('var o={a:1},p={...o};return o?.a??p.a'); new Function('return async function(){await 0}'); new RegExp('a', 's'); return true; } catch (e) { return false; }
+    };
     TV.pad2 = function (n) { n = Math.floor(n); return n < 10 ? '0' + n : '' + n; };
     TV.fmtTime = function (sec) {
         if (!(sec >= 0) || !isFinite(sec)) return '--:--';
