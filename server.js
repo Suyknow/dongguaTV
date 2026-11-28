@@ -1126,6 +1126,7 @@ if (!process.env.VERCEL) {
 }
 // 📅 全站追剧周表(见 lib/update-calendar):每 30 分钟拉几个大资源站「最近 N 小时更新」(?ac=detail&h=),按资源站的更新日期归天、
 //    按片名去重,分 电视剧/动漫/综艺/电影/纪录片/短剧 存进 cache.db;首页「追剧日历」读 /api/calendar。
+//    今天以后的日子(资源站还没有)用 TMDB 排期 + 按前两周规律预计补上,标「待播」。
 //    需 CACHE_TYPE=sqlite。CALENDAR_SITES=站点key,逗号分隔 指定更新源(默认从 速播/红牛/非凡/最大/极速 里挑现有的前 3 个);CALENDAR_DISABLE=1 关。
 const CALENDAR_ENABLED = !envFlag('CALENDAR_DISABLE');
 const CALENDAR_PREFER = ['subocaiji', 'hongniuzy', 'ffzy', 'zuid', 'jisu'];
@@ -1143,19 +1144,23 @@ if (!process.env.VERCEL && CALENDAR_ENABLED) {
             db: () => REQ_DB_OK() ? cacheManager.db : null,
             sites: calendarSites,
             httpGet: async (url, timeout) => (await axios.get(url, { timeout, responseType: 'text', transformResponse: [(x) => x], maxContentLength: 8 * 1024 * 1024 })).data,
-            log: (...a) => console.log('[Calendar]', ...a)
+            // 今天以后的日子:TMDB 排期(每 6 小时一轮,没配 TMDB_API_KEY 就只有「按规律预计」)
+            tmdbGet: process.env.TMDB_API_KEY ? tmdbGetServer : null,
+            log: (...a) => console.log('[Calendar]', ...a),
+            opts: { tmdbImg: process.env['TMDB_PROXY_URL'] ? process.env['TMDB_PROXY_URL'].replace(/\/$/, '') + '/t/p' : 'https://image.tmdb.org/t/p' }
         });
         updateCalendar.start();   // 启动 2 分钟后第一轮(第一次补 3 天),之后每 30 分钟
     } catch (e) { console.warn('[Calendar] 模块加载失败,追剧周表已禁用:', e.message); updateCalendar = null; }
 }
 app.get('/api/calendar', (req, res) => {
-    const w = updateCalendar && updateCalendar.week(String(req.query.day || ''), req.query.limit);
+    // tz = 浏览器时区(IANA 名)+ tzo = 浏览器此刻的 UTC 偏移(分钟):「今天」和每条落在哪天都按看的人当地时间算;不传 = 北京时间
+    const w = updateCalendar && updateCalendar.week(String(req.query.day || ''), req.query.limit, String(req.query.tz || ''), req.query.tzo);
     if (!w) return res.json({ enabled: false });
     res.set('Cache-Control', 'public, max-age=60');
     res.json(Object.assign({ enabled: true }, w));
 });
 app.get('/api/calendar/list', (req, res) => {
-    const r = updateCalendar && updateCalendar.list(String(req.query.day || ''), String(req.query.cat || ''), req.query.offset, req.query.limit);
+    const r = updateCalendar && updateCalendar.list(String(req.query.day || ''), String(req.query.cat || ''), req.query.offset, req.query.limit, String(req.query.tz || ''), req.query.tzo);
     if (!r) return res.json({ enabled: false, items: [], total: 0 });
     res.set('Cache-Control', 'public, max-age=60');
     res.json(Object.assign({ enabled: true }, r));
@@ -1516,6 +1521,16 @@ app.get(['/', '/index.html'], async (req, res) => {
         try { return await renderSharePage(req, res, req.query.play); }
         catch (e) { console.error('[SharePage] error:', e.message); /* 失败则继续返回 SPA */ }
     }
+    // 📺 老安卓内核(Chrome < 80,电视盒子自带的 WebView 多半是)读不懂网页版的脚本,直接去电视版,省下 2MB 的首页下载。
+    //    手机扫电视登录码打开的 ?tvlogin= 是手机那一侧,不跳;页面里的启动检测还会再判一次(Vercel 没有这个服务器跳转)
+    if (!req.query.tvlogin && req.query.tv !== '0') {
+        const ua = String(req.headers['user-agent'] || '');
+        const cv = /Android/i.test(ua) && /Chrome\/(\d+)/.exec(ua);
+        if (cv && +cv[1] < 80) {
+            const qi = req.originalUrl.indexOf('?');
+            return res.redirect(302, '/tv/' + (qi >= 0 ? req.originalUrl.slice(qi) : ''));
+        }
+    }
 
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.set('Pragma', 'no-cache');
@@ -1545,6 +1560,47 @@ app.get(['/', '/index.html'], async (req, res) => {
         console.error('[Dynamic HTML] Error:', err.message);
         // 回退到静态文件
         res.sendFile(path.join(__dirname, 'public/index.html'));
+    }
+});
+
+// 📱 安卓 App 下载页 /app、直链 /app.apk、/api/app/latest + 站长后台「App」页(/api/admin/app),见 lib/app-download。
+//    下载链接在后台填(安装包或 R2 的 latest.json);后台没保存过时只有 ednovas.video / 设了 APP_DOWNLOAD_JSON 的站默认开 ——
+//    官方 App 打开的是 ednovas.video。安装包只在 GitHub Actions 里打包签名,网站服务器上不编译、不放签名密钥
+let appDownload = null;
+try {
+    // db / adminAuthed 定义在下面(构造时还在 TDZ),一律用闭包,请求进来时才取
+    appDownload = require('./lib/app-download').createAppDownload({
+        axios,
+        db: () => REQ_DB_OK() ? cacheManager.db : null,
+        adminAuthed: (req) => adminAuthed(req),
+        log: (...a) => console.log('[AppDownload]', ...a)
+    });
+    appDownload.registerRoutes(app);
+} catch (e) { console.warn('[AppDownload] 模块加载失败,下载页已禁用:', e.message); appDownload = null; }
+
+// 📺 电视版(public/tv,遥控器为主的独立页面;首页的启动检测把电视 / 盒子 / 老内核分流到这里)。
+//   页面本身不缓存;里面 ?v=__TVV__ 换成 public/tv 下文件(名字 + 大小 + 修改时间)的指纹 —— 改了脚本电视上立刻生效,
+//   不用等 1 小时的静态缓存过期,也不用重启(每次只 stat 十几个文件,指纹没变就用记住的页面)。
+let _tvPage = { key: '', html: '' };
+app.get(['/tv', '/tv/', '/tv/index.html'], (req, res) => {
+    if (req.path === '/tv') return res.redirect(302, '/tv/' + req.url.slice(3));
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    try {
+        const dir = path.join(__dirname, 'public/tv');
+        let key = '';
+        for (const f of fs.readdirSync(dir).sort()) {
+            if (!/\.(js|css|html)$/.test(f)) continue;
+            const st = fs.statSync(path.join(dir, f));
+            key += f + ':' + st.size + ':' + st.mtimeMs + ';';
+        }
+        if (key !== _tvPage.key) {
+            const v = crypto.createHash('md5').update(key).digest('hex').slice(0, 10);
+            _tvPage = { key, html: fs.readFileSync(path.join(dir, 'index.html'), 'utf8').replace(/__TVV__/g, v) };
+        }
+        res.type('html').send(_tvPage.html);
+    } catch (e) {
+        console.error('[TV page] error:', e.message);
+        res.sendFile(path.join(__dirname, 'public/tv/index.html'));
     }
 });
 
@@ -1868,6 +1924,112 @@ app.get('/api/live/channels', async (req, res) => {
     }
 });
 
+// 📺 电视版搜索联想:/api/tv/suggest?q=庆余年 或 qyn(拼音首字母也认)→ { list: [{ title, year, kind }] }(最多 12 条)
+//   先问爱奇艺的联想接口(认拼音首字母:qyn → 庆余年),它不通 / 没结果再退 360 搜索联想(只有词,去掉「电视剧全集免费观看」这类尾巴)。
+//   只是片名联想,不要登录;每个词缓存 10 分钟(最多 500 个);每 IP 每分钟 60 次。scripts/tv-api-test.mjs 抽 <tv-suggest-core> 这段离线测
+// <tv-suggest-core>
+const TV_SUG_KINDS = /^(电视剧|电影|综艺|动漫|动画|纪录片|短剧|漫剧|少儿)$/;
+// 360 联想里不是片名的词(演员表 / 小说 / 什么时候上映……);只用在 360 上:爱奇艺回的是片名(演员请就位 / 延禧攻略 都是真片名)
+const TV_SUG_JUNK = /演员表|小说|什么时候|上映时间|阅读|下载|主题曲|插曲|歌曲|百科|原著|txt|剧情介绍|分集剧情|结局是|拍摄地|豆瓣|评分|壁纸|头像|图片|手游/i;
+// 片名后面的 SEO 尾巴,一层层剥(「庆余年第二季40集免费观看」→「庆余年第二季」)
+const TV_SUG_TAIL = /(免费观看完整版|在线观看完整版|在线观看免费|免费在线观看|免费观看|在线观看|在线播放|免费播放|完整版|免费版|全集免费|全集|免费|高清|在线|观看|播放|电视连续剧|连续剧|电视剧|电影版|动漫版|动画片|综艺|大结局|未删减版?|国语版|粤语版|中字|第?\d+集全?)$/;
+function tvSugClean(s) {
+    let t = String(s || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    for (let i = 0; i < 8; i++) {
+        const n = t.replace(TV_SUG_TAIL, '').trim();
+        if (n === t || !n) break;
+        t = n;
+    }
+    return t.slice(0, 40);
+}
+// 爱奇艺:data[].name / year / cname;aid 为 0 的是"联想词"不是片子,年份是假的(当年或 2010)
+function tvSugFromIqiyi(d) {
+    const arr = d && Array.isArray(d.data) ? d.data : [];
+    const out = [];
+    for (const x of arr) {
+        if (!x || !x.name) continue;
+        const title = tvSugClean(x.name);
+        if (!title) continue;
+        const real = Number(x.aid) > 0;
+        const tags = (x.presentation_element && Array.isArray(x.presentation_element.tags)) ? x.presentation_element.tags.map(t => t && t.name).filter(Boolean) : [];
+        const kind = [x.cname].concat(tags).find(k => TV_SUG_KINDS.test(String(k || ''))) || '';
+        const y = Number(x.year);
+        out.push({ title, year: real && y > 1900 && y < 2100 ? String(y) : '', kind: String(kind) });
+    }
+    return out;
+}
+// 360:result[].word,只有词
+function tvSugFrom360(d) {
+    const arr = d && Array.isArray(d.result) ? d.result : [];
+    const out = [];
+    for (const x of arr) {
+        const w = x && (x.word || x.w);
+        if (!w || TV_SUG_JUNK.test(String(w))) continue;
+        const title = tvSugClean(w);
+        if (title && !TV_SUG_JUNK.test(title)) out.push({ title, year: '', kind: '' });
+    }
+    return out;
+}
+// 去重(忽略空格 / 大小写;后来的同名条目把缺的年份 / 类型补上),最多 12 条
+function tvSugMerge(lists, max) {
+    const out = [], by = new Map();
+    for (const list of lists) for (const it of (list || [])) {
+        const k = String(it.title || '').replace(/\s+/g, '').toLowerCase();
+        if (!k) continue;
+        const ex = by.get(k);
+        if (ex) { if (!ex.year && it.year) ex.year = it.year; if (!ex.kind && it.kind) ex.kind = it.kind; continue; }
+        if (out.length >= (max || 12)) continue;
+        const o = { title: it.title, year: it.year || '', kind: it.kind || '' };
+        by.set(k, o); out.push(o);
+    }
+    return out;
+}
+// 输入只认 字母 / 数字 / 汉字(空格和常见标点先去掉),最多 20 个字
+function tvSugQuery(q) {
+    const s = String(typeof q === 'string' ? q : '').replace(/[\s·・:：,，.。!！?？'"“”‘’\-—_]+/g, '');
+    return (s && s.length <= 20 && /^[A-Za-z0-9㐀-䶿一-鿿豈-﫿]+$/.test(s)) ? s : '';
+}
+// </tv-suggest-core>
+const _tvSugCache = new Map(), _tvSugInflight = new Map();
+const TV_SUG_TTL = 10 * 60 * 1000, TV_SUG_MAX = 500;
+const tvSuggestLimiter = rateLimit({ windowMs: 60 * 1000, max: 60, keyGenerator: ipKey, message: { list: [], error: 'rate' } });
+const TV_SUG_UA = { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36', 'Accept': 'application/json' };
+async function tvSugFetch(url) {
+    const r = await axios.get(url, { timeout: 4000, maxContentLength: 512 * 1024, headers: TV_SUG_UA, validateStatus: s => s >= 200 && s < 300 });
+    let d = r.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = null; } }
+    return d;
+}
+async function tvSuggest(q) {
+    let iq = null, so = null;
+    try { iq = tvSugFromIqiyi(await tvSugFetch('https://suggest.video.iqiyi.com/?if=mobile&key=' + encodeURIComponent(q))); } catch (e) { }
+    if (!iq || !iq.length) {
+        try { so = tvSugFrom360(await tvSugFetch('https://sug.so.360.cn/suggest?word=' + encodeURIComponent(q) + '&encodein=utf-8&encodeout=utf-8&format=json')); } catch (e) { }
+    }
+    return { ok: !!(iq || so), list: tvSugMerge([iq, so], 12) };
+}
+app.get('/api/tv/suggest', tvSuggestLimiter, async (req, res) => {
+    const q = tvSugQuery(req.query.q);
+    if (!q) return res.json({ list: [] });
+    const key = q.toLowerCase();
+    const hit = _tvSugCache.get(key);
+    if (hit && Date.now() - hit.at < TV_SUG_TTL) { res.set('Cache-Control', 'public, max-age=600'); return res.json({ list: hit.list }); }
+    try {
+        let p = _tvSugInflight.get(key);
+        if (!p) { p = tvSuggest(q).finally(() => _tvSugInflight.delete(key)); _tvSugInflight.set(key, p); }
+        const r = await p;
+        if (r.ok) {
+            _tvSugCache.delete(key);
+            _tvSugCache.set(key, { at: Date.now(), list: r.list });
+            while (_tvSugCache.size > TV_SUG_MAX) _tvSugCache.delete(_tvSugCache.keys().next().value);
+            res.set('Cache-Control', 'public, max-age=600');
+        }
+        res.json({ list: r.list });
+    } catch (e) {
+        res.json({ list: [] });
+    }
+});
+
 // 启动后预热缓存(非阻塞)，让首位用户也能秒开直播区
 if (LIVE_TV_ENABLED && !IS_VERCEL) { getLiveChannels(false).catch(() => {}); }
 
@@ -1908,6 +2070,8 @@ app.get('/api/config', (req, res) => {
         ai_find: !!aiFind,
         // 📚 片单存服务器 / 分享可用(需 sqlite;没开就只存本机、不能分享)
         playlists_enabled: !!(playlists && playlists.enabled()),
+        // 📱 安卓 App 下载({ page:'/app', version, size, minAndroid } 或 null;前端右下角的 APP 按钮看它)
+        app_download: appDownload ? appDownload.configField(req) : null,
         // 💬 评论 + 用户弹幕(需 sqlite;COMMENTS_DISABLE=1 关)
         comments_enabled: !!(comments && comments.enabled()),
         // 🚫 封禁：站长在后台封了这个用户 → 前端锁屏
@@ -4537,7 +4701,8 @@ app.get('/movie/:id', async (req, res) => {
     await renderMediaPage(req, res, 'movie');
 });
 
-app.get('/tv/:id', async (req, res) => {
+// 只认纯数字:/tv/ 下面是电视版的页面和脚本(public/tv),别的路径走静态文件 / 404,不能被这里改成跳首页
+app.get('/tv/:id(\\d+)', async (req, res) => {
     await renderMediaPage(req, res, 'tv');
 });
 

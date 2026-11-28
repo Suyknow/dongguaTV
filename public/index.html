@@ -30,9 +30,44 @@
     <meta name="twitter:description" content="现代化流媒体聚合播放器，免费观看最新电影、电视剧、综艺、动漫。">
     <meta name="twitter:image" content="https://ednovas.video/icons/icon-512.png">
 
-    <!-- 兼容性检测 (必须在所有脚本之前) -->
+    <!-- 兼容性检测 + 电视版分流 (必须在所有脚本之前;只写 ES5,老内核也要能跑这一段)
+         电视 / 盒子 → 独立的电视版 /tv/(public/tv,ES5 写的,老盒子也能跑);?tv=0 / ?tv=1 记住选择(force_tv_mode,和 detectTVMode 同一个键)。
+         主站脚本要 Chrome 80+(?. ?? 对象展开 async,Vue 本身还有 /s 正则要 62+):老内核(斐讯 T1 这类 Android 7 盒子自带的 ≈Chrome 52)
+         读不懂就整段不跑,页面永远停在「正在初始化...」—— 这里先用 new Function 试一下,读不懂就分流到电视版或者明确告诉用户 -->
     <script>
         (function () {
+            var ua = navigator.userAgent || '', q = location.search || '';
+            function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { } return null; }
+            var m = /[?&]tv=([01])(&|$)/.exec(q);
+            if (m) ls('force_tv_mode', m[1]);
+            var forced = ls('force_tv_mode');
+            var modern = true;
+            try { new Function('var o={a:1},p={...o};return o?.a??p.a'); new Function('return async function(){await 0}'); new RegExp('a', 's'); } catch (e) { modern = false; }
+            // 自家安卓 App:Chrome 55 以下 Capacitor 注入的脚本本身就读不懂(window.Capacitor 不存在),App 加的 AndroidFullscreen 接口什么版本都有
+            var isNative = !!(window.AndroidFullscreen || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()));
+            var phone = /iphone|ipod|android.*mobile|windows phone/i.test(ua);
+            var tvUA = /android tv|googletv|aftt|aftm|aftb|firetv|chromecast|sabrina|boreal|roku|smarttv|smart-tv|tizen|webos|web0s|leanback|hbbtv|netcast|viera|bravia|aquos|mitv|mibox|hisense|skyworth|letv/i.test(ua);
+            var bigAndroid = /android/i.test(ua) && !phone;          // 平板 / 盒子(安卓 WebView 只有手机才带 Mobile)
+            var phoneSide = /[?&]tvlogin=/.test(q);                    // 手机扫电视上的登录码打开的页面,不是电视
+            var wantTV = !phoneSide && (forced === '1' || (forced !== '0' && (tvUA || (isNative && !phone) || (!modern && bigAndroid))));
+            if (wantTV) {
+                location.replace('/tv/' + q + location.hash);
+                // 剩下的页面别再解析了(1.2MB 的主脚本在老盒子上光解析就要好几秒);window.stop() 会把上面的跳转也停掉,所以用 plaintext 吞掉
+                document.write('<style>body{background:#0e0e11}</style><plaintext style="display:none">');
+                return;
+            }
+            if (!modern && !phoneSide) {
+                if (window.stop) window.stop();
+                var v = /Chrome\/(\d+)/.exec(ua);
+                document.write(
+                    '<div style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:2147483647;background:#0e0e11;color:#fff;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center;-webkit-align-items:center;align-items:center;padding:40px;text-align:center;font-family:sans-serif;box-sizing:border-box;">' +
+                    '<h2 style="color:#ff4757;font-size:24px;margin:0 0 18px;">浏览器内核版本太旧</h2>' +
+                    '<p style="font-size:16px;line-height:1.7;color:#ccc;margin:0;">这台设备的浏览器内核' + (v ? '(Chrome ' + v[1] + ')' : '') + '读不懂网页版用到的新写法,网页版打不开。<br>可以先用简洁版(电视版),它专门为老设备写的;或者把系统的 Android System WebView / Chrome 升级到 80 以上再来。</p>' +
+                    '<a href="/tv/?tv=1" style="display:inline-block;margin-top:28px;padding:12px 34px;border-radius:24px;background:#e50914;color:#fff;font-size:18px;text-decoration:none;">进入简洁版</a>' +
+                    '</div>'
+                );
+                return;
+            }
             var missing = [];
             // Vue 3 核心依赖
             if (typeof Proxy === 'undefined') missing.push('Proxy');
@@ -2222,9 +2257,37 @@
         }
         .btn-settings:hover { transform: rotate(45deg) scale(1.08); background: var(--accent); }
         .btn-settings:focus-visible { outline: 3px solid rgba(var(--fg-rgb), 0.6); outline-offset: 2px; }
+        /* 📱 下载 App:和⚙️同一个样子,叠在它上面;有它时返回顶部再往上一格 */
+        .btn-app {
+            position: fixed;
+            bottom: 104px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            background: rgba(var(--glass-2-rgb), 0.92);
+            color: var(--text-1);
+            border: 1px solid rgba(var(--fg-rgb), 0.14);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(var(--shadow-rgb), 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.2s, color 0.2s;
+        }
+        .btn-app:hover { transform: scale(1.08); background: var(--accent); color: var(--on-accent); text-decoration: none; }
+        .btn-app:focus-visible { outline: 3px solid rgba(var(--fg-rgb), 0.6); outline-offset: 2px; }
+        .btn-app + .btn-top { bottom: 168px; }
         @media (max-width: 768px) {
             .btn-settings { right: 16px; bottom: 20px; width: 44px; height: 44px; font-size: 18px; }
             .btn-top { right: 16px; bottom: 76px; width: 44px; height: 44px; font-size: 18px; }
+            .btn-app { right: 16px; bottom: 76px; width: 44px; height: 44px; font-size: 12px; }
+            .btn-app + .btn-top { bottom: 132px; }
         }
 
 
@@ -2547,6 +2610,7 @@
         .cal-day.today:not(.active) { border-color: rgba(var(--accent-rgb), 0.55); color: var(--text-1); }
         .cal-day.active { background: linear-gradient(135deg, var(--accent), var(--accent-warm)); border-color: transparent; color: var(--on-accent); box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.3); }
         .cal-day:disabled { opacity: 0.32; cursor: default; }
+        .cal-day.plan:not(.active) { border-style: dashed; }   /* 今天以后 = 待播(排期 / 预计),虚线框和已更新的区分开 */
         .cal-dow { font-size: 13px; font-weight: 700; white-space: nowrap; }
         .cal-md { font-size: 11px; opacity: 0.7; font-variant-numeric: tabular-nums; }
         .cal-n { font-size: 11px; min-width: 22px; padding: 0 6px; border-radius: calc(999px * var(--radius-k)); background: rgba(var(--fg-rgb), 0.08); font-variant-numeric: tabular-nums; }
@@ -3793,6 +3857,7 @@
         body.detail-covered #app > .navbar-custom,
         body.detail-covered #app > .btn-top,
         body.detail-covered #app > .btn-settings,
+        body.detail-covered #app > .btn-app,
         body.detail-covered #app > #heroCarousel,
         body.detail-covered #app > .search-section,
         body.detail-covered #app > .home-flow,
@@ -6359,6 +6424,7 @@
         html[data-style="magazine"] .catdir-card-title { font-family: var(--mag-serif); font-size: 19px; }
 
         /* ── 右下角悬浮按钮:方块、细线,不转圈 ── */
+        html[data-style="magazine"] .btn-app,
         html[data-style="magazine"] .btn-settings { border-radius: 0; background: var(--bg); border: 1px solid var(--text-1); box-shadow: none; }
         html[data-style="magazine"] .btn-settings:hover { transform: none; background: var(--inv-bg); color: var(--inv-fg); }
         html[data-style="magazine"] .btn-top { border-radius: 0; background: var(--accent); box-shadow: none; }
@@ -6975,10 +7041,10 @@
         html[data-style="mono"] .browse-card:focus .poster-wrap { outline: 3px solid var(--text-1); outline-offset: 3px; }
         html[data-style="mono"] .scroll-btn { background: var(--bg); border: 1px solid var(--text-1); opacity: 0.85; }
         html[data-style="mono"] .scroll-btn:hover { background: var(--text-1); color: var(--bg); opacity: 1; transform: translateY(-50%); }
-        html[data-style="mono"] .btn-top, html[data-style="mono"] .btn-settings { border-radius: 0; }
+        html[data-style="mono"] .btn-top, html[data-style="mono"] .btn-settings, html[data-style="mono"] .btn-app { border-radius: 0; }
         html[data-style="mono"] .btn-top { background: var(--text-1); color: var(--bg); }
         html[data-style="mono"] .btn-top:hover { transform: none; }
-        html[data-style="mono"] .btn-settings { background: var(--bg); border-color: var(--text-1); }
+        html[data-style="mono"] .btn-settings, html[data-style="mono"] .btn-app { background: var(--bg); border-color: var(--text-1); }
         html[data-style="mono"] .btn-settings:hover { background: var(--text-1); color: var(--bg); transform: none; }
         html[data-style="mono"] .expand-toggle { background: transparent; }
 
@@ -7720,6 +7786,26 @@
         <div id="loader-status" style="margin-top: 20px; color: var(--text-10); font-size: 13px; text-align: center;">正在初始化...
         </div>
     </div>
+    <!-- 启动看门狗(ES5):<head> 里的启动检测只拦得住"语法读不懂";运行时出错(某个脚本没加载上、老内核缺个 API)主程序起不来,
+         页面也会永远停在「正在初始化」。20 秒后主程序还没起来、字还是这一句,就把原因写出来,再给一个进电视版(简洁版)的入口 -->
+    <script>
+        (function () {
+            var errs = [];
+            try {
+                window.addEventListener('error', function (e) {
+                    if (errs.length >= 3) return;
+                    var t = e && e.target;
+                    errs.push((e && e.message) || (t && (t.src || t.href) ? '加载失败 ' + String(t.src || t.href).split('?')[0].split('/').pop() : '出错'));
+                }, true);
+            } catch (e) { }
+            setTimeout(function () {
+                var st = document.getElementById('loader-status'), ld = document.getElementById('app-loader');
+                if (!st || !ld || ld.style.display === 'none' || window.vueApp || !/正在初始化/.test(st.textContent)) return;
+                st.innerHTML = '启动卡住了' + (errs.length ? '(' + String(errs[0]).replace(/[<>&"]/g, '').slice(0, 80) + ')' : '') +
+                    '<br><br><a href="javascript:location.reload()" style="color:#ff6b6b">刷新试试</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="/tv/?tv=1" style="color:#ff6b6b">进入电视版(简洁版)</a>';
+            }, 20000);
+        })();
+    </script>
 
     <!-- Password Protection Screen -->
     <div id="password-screen" class="password-screen" style="display: none;">
@@ -7993,6 +8079,9 @@
             <button type="button" class="nav-shorts" :class="{ 'nav-shorts-mini': pastCompactThreshold }" @click="openShorts()" title="刷短剧" aria-label="刷短剧"><i class="fas fa-mobile-screen-button" aria-hidden="true"></i><span>刷短剧</span></button>
         </nav>
 
+        <!-- 📱 下载 App(右下角,在⚙️设置上面;返回顶部按钮出现时再往上叠一格)。站点开了下载页(/api/config 的 app_download)
+             才有;已经在 App 里、旧 TV 模式里不显示。必须紧挨在 .btn-top 前面:.btn-app + .btn-top 靠它把返回顶部往上挪 -->
+        <a v-if="appDl && !isNativeApp && !isTVMode" class="btn-app" href="/app" target="_blank" rel="noopener" title="下载安卓 App(手机 / 电视盒子)" aria-label="下载安卓 App">APP</a>
         <!-- Back to Top Button -->
         <button class="btn-top" @click="scrollToTop">
             <i class="fas fa-arrow-up"></i>
@@ -8146,18 +8235,18 @@
                 </section>
                 <!-- 追剧日历 → 本周播出表 -->
                 <section v-else-if="b.k === 'calendar'" :id="'mag-' + b.id" class="mag-sec mag-cal">
-                    <h3 class="mag-sec-h"><span>本周播出</span><small>资源站这一周每天更新了什么</small></h3>
+                    <h3 class="mag-sec-h"><span>本周播出</span><small>每天更新了什么、接下来播什么</small></h3>
                     <div class="mag-cal-days" role="tablist" aria-label="日期">
-                        <button v-for="d in calDays" :key="d.day" type="button" role="tab" :class="{ on: d.active }" :disabled="d.future"
+                        <button v-for="d in calDays" :key="d.day" type="button" role="tab" :class="{ on: d.active }" :disabled="d.future && !d.total"
                             :aria-selected="d.active ? 'true' : 'false'" @click="calPickDay(d.day)">{{ d.today ? '今天' : d.dow }}<small>{{ d.md }}</small></button>
                     </div>
                     <div class="mag-cal-cats" v-if="calCats.length">
                         <button v-for="c in calCats" :key="c.k" type="button" :class="{ on: c.k === cal.cat }" @click="calPickCat(c.k)">{{ c.l }}<small>{{ c.n }}</small></button>
                     </div>
                     <ul v-if="calItems.length" class="mag-cal-list">
-                        <li v-for="it in calItems" :key="'mc-' + it.title" @click="autoSearch(it.title)"><b>{{ it.title }}</b><span v-if="it.remarks">{{ it.remarks }}</span><em v-if="it.isNew">新上</em></li>
+                        <li v-for="it in calItems" :key="'mc-' + it.title" @click="autoSearch(it.title)"><b>{{ it.title }}</b><span v-if="it.remarks">{{ it.remarks }}</span><em v-if="calBadge(it)">{{ calBadge(it) }}</em></li>
                     </ul>
-                    <div v-else class="mag-empty">这天资源站还没有更新</div>
+                    <div v-else class="mag-empty">{{ calEmptyText }}</div>
                 </section>
                 <!-- 直播 -->
                 <section v-else-if="b.k === 'live'" :id="'mag-' + b.id" class="mag-sec">
@@ -8432,7 +8521,7 @@
                 </div>
             </div>
 
-            <!-- 📅 追剧日历:资源站这一周每天更新了哪些(全站同一份,服务器每 30 分钟从 2~3 个大站拉一次)。
+            <!-- 📅 追剧日历:资源站这一周每天更新了哪些(全站同一份,服务器每 30 分钟从 2~3 个大站拉一次);今天以后 = 待播(TMDB 排期 + 按规律预计)。
                  选日期 / 分类;「展开」= 这天这类全部(分页拉);上一周 / 下一周最多回看 9 周。没开(需 sqlite)/ 整周没数据时隐藏 -->
             <div v-else-if="k === 'calendar'" class="section-container home-sec cal-sec animate__animated animate__fadeInUp"
                 :class="{ 'home-first': bi === 0 }">
@@ -8449,11 +8538,11 @@
                 </div>
                 <div class="cal-days" role="tablist" aria-label="日期">
                     <button v-for="d in calDays" :key="d.day" type="button" role="tab" class="cal-day"
-                        :class="{ active: d.active, today: d.today }" :disabled="d.future" :aria-selected="d.active ? 'true' : 'false'"
+                        :class="{ active: d.active, today: d.today, plan: d.future }" :disabled="d.future && !d.total" :aria-selected="d.active ? 'true' : 'false'"
                         @click="calPickDay(d.day)">
                         <span class="cal-dow">{{ d.today ? '今天' : d.dow }}</span>
                         <span class="cal-md">{{ d.md }}</span>
-                        <span class="cal-n">{{ d.future ? '·' : (d.total || 0) }}</span>
+                        <span class="cal-n">{{ d.future && !d.total ? '·' : (d.total || 0) }}</span>
                     </button>
                 </div>
                 <div class="cal-cats" role="tablist" aria-label="分类" v-if="calCats.length">
@@ -8465,7 +8554,7 @@
                     <i class="fas fa-mobile-screen-button" aria-hidden="true"></i>竖屏刷短剧，一集一两分钟<i class="fas fa-chevron-right" aria-hidden="true"></i></button>
                 <button v-if="cal.cat === 'short' && calCats.length" type="button" class="cal-shorts-go" @click="openShortsLib()">
                     <i class="fas fa-table-cells" aria-hidden="true"></i>全部短剧，按题材找<i class="fas fa-chevron-right" aria-hidden="true"></i></button>
-                <div v-if="!calCats.length" class="cal-empty">这天资源站还没有更新</div>
+                <div v-if="!calCats.length" class="cal-empty">{{ calEmptyText }}</div>
                 <div class="scroll-container" v-else-if="!cal.open">
                     <button class="scroll-btn left" v-show="calCanScrollLeft" @click="scrollRowBy('calRow', -1)"
                         aria-label="向左滚动追剧日历"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
@@ -8475,7 +8564,7 @@
                             <div class="poster-wrap">
                                 <img :src="calPic(it)" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""
                                     @load="$event.target.classList.add('loaded'); $event.target.parentElement.classList.add('img-loaded')" @error="calPicErr">
-                                <span class="cal-new" v-if="it.isNew">新上</span>
+                                <span class="cal-new" v-if="calBadge(it)">{{ calBadge(it) }}</span>
                                 <span class="cal-ep" v-if="it.remarks">{{ it.remarks }}</span>
                             </div>
                             <div class="movie-name">{{ it.title }}</div>
@@ -8494,7 +8583,7 @@
                         <div class="poster-wrap">
                             <img :src="calPic(it)" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""
                                 @load="$event.target.classList.add('loaded'); $event.target.parentElement.classList.add('img-loaded')" @error="calPicErr">
-                            <span class="cal-new" v-if="it.isNew">新上</span>
+                            <span class="cal-new" v-if="calBadge(it)">{{ calBadge(it) }}</span>
                             <span class="cal-ep" v-if="it.remarks">{{ it.remarks }}</span>
                         </div>
                         <div class="movie-name">{{ it.title }}</div>
@@ -16239,6 +16328,10 @@
         // 📅 追剧日历的分类(顺序 = 分类标签顺序)与日期加减(YYYY-MM-DD,按 UTC 算不受本机时区影响)
         const CAL_CATS = [['tv', '电视剧'], ['anime', '动漫'], ['variety', '综艺'], ['movie', '电影'], ['doc', '纪录片'], ['short', '短剧']];
         const calAddDays = (day, n) => new Date(Date.parse(day + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+        // 📅 追剧日历按浏览器所在时区分天(海外用户的「今天」不是北京的今天);拿不到就不传 = 服务器按北京时间
+        const CAL_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })();
+        // 再带上此刻真实的 UTC 偏移:服务器的时区库跟浏览器不一致时(比如卑诗省改全年 UTC-7)按浏览器的算
+        const calTzQ = () => (CAL_TZ ? '&tz=' + encodeURIComponent(CAL_TZ) : '') + '&tzo=' + (-new Date().getTimezoneOffset());
         // 首页固定榜单(rowConfigs 里除随机盲盒以外的键,顺序 = 默认顺序)。rowConfigs 加 / 删榜单要同步改这里
         const HOME_ROW_KEYS = ['movieRow', 'tvRow', 'cnRow', 'usRow', 'krjpRow', 'animeRow', 'scifiRow', 'actionRow', 'comedyRow', 'crimeRow', 'romanceRow', 'familyRow', 'docRow', 'warRow', 'horrorRow', 'mysteryRow', 'fantasyRow', 'varietyRow', 'historyRow'];
 
@@ -16563,6 +16656,7 @@
                     // 📚 片单(像豆瓣豆列):同步账号存服务器(plEnabled = /api/config 的 playlists_enabled),其他人存本机 donggua_playlists;
                     //    形状见 <dg-pl-core>。plSheet = 「加到片单」弹窗;plPage = 片单页(自己的 / 分享链接 ?list= 进来的别人的)
                     plEnabled: false,
+                    appDl: null,          // 📱 /api/config 的 app_download({ page, version, size, minAndroid }),有才显示右下角 APP 按钮
                     plLists: [],
                     plLimits: { lists: 50, items: 500, total: 3000 },
                     plBusy: false,
@@ -17190,10 +17284,13 @@
                     if (!d) return '';
                     if (d.days.some(x => x.day === d.today)) return '本周';
                     if (calAddDays(d.next, 0) <= d.today && d.today <= calAddDays(d.next, 6)) return '上周';
+                    if (d.prev <= d.today && d.today <= calAddDays(d.prev, 6)) return '下周';
                     return +d.monday.slice(5, 7) + '/' + +d.monday.slice(8) + ' 起';
                 },
                 calCanPrev() { const d = this.cal.data; return !!d && calAddDays(d.prev, 6) >= d.oldest; },
-                calCanNext() { const d = this.cal.data; return !!d && d.next <= d.today; },
+                // 下一周:本周以前随便翻;今天以后翻到排期排到的那天(last)为止
+                calCanNext() { const d = this.cal.data; return !!d && (d.next <= d.today || (!!d.last && d.next <= d.last)); },
+                calEmptyText() { const d = this.cal.data; return d && this.cal.day > d.today ? '这天还没有排期' : '这天资源站还没有更新'; },
                 trialLeftText() { return DgTrial.fmt(DgTrial.left(this.trial.limit, this.trial.used)); },
                 trialLimitText() { const s = this.trial.limit; return s % 60 ? DgTrial.fmt(s) : (s / 60) + ' 分钟'; },
                 catTypes() { return DgCatalog.TYPES; },
@@ -17667,6 +17764,7 @@
                         this.aiFindOn = !!config.ai_find;     // ✨ AI 找片
                         this.pushEnabled = !!config.push_enabled;
                         this.plEnabled = !!config.playlists_enabled;   // 📚 片单存服务器 / 能分享(没有 = 只存本机)
+                        this.appDl = config.app_download || null;      // 📱 右下角 APP 按钮(站点开了 /app 下载页才有)
                         // 📺 直播开关（默认开；服务端 LIVE_TV_DISABLED=1 则关，前端隐藏直播区）
                         this.liveEnabled = !!config.live_enabled;
                         // 🚫 封禁锁屏（站长在后台封了这个用户）
@@ -21728,7 +21826,7 @@
                     c.loading = true;
                     try {
                         const get = async (d) => {
-                            const r = await fetch('/api/calendar?limit=24' + (d ? '&day=' + encodeURIComponent(d) : ''));
+                            const r = await fetch('/api/calendar?limit=24' + calTzQ() + (d ? '&day=' + encodeURIComponent(d) : ''));
                             if (!r.ok) throw new Error('HTTP ' + r.status);
                             return r.json();
                         };
@@ -21737,11 +21835,12 @@
                         if (!d || !d.enabled || !Array.isArray(d.days)) { if (d && d.enabled === false) c.enabled = false; return; }
                         if (!day) {
                             const t = d.days.find(x => x.day === d.today);
-                            if (t && t.total < 12) {
+                            const real = x => (x.real != null ? x.real : x.total);   // 待播的不算(早上今天全是待播也该先看昨天)
+                            if (t && real(t) < 12) {
                                 const y = await get(calAddDays(d.today, -1)).catch(() => null);
                                 if (seq !== this._calSeq) return;
                                 const yt = y && y.days && y.days.find(x => x.day === y.day);
-                                if (yt && yt.total > t.total) d = y;
+                                if (yt && real(yt) > real(t)) d = y;
                             }
                         }
                         for (const k of Object.keys(d.cats || {})) d.cats[k].items = (d.cats[k].items || []).map(it => Object.freeze(it));
@@ -21766,13 +21865,15 @@
                     if (this.cal.open) this.calLoadMore(true);
                     this.$nextTick(() => { const row = this.$refs.calRow; const el = Array.isArray(row) ? row[0] : row; if (el) el.scrollLeft = 0; this.onFavPopRowScroll('calRow', 'cal'); });
                 },
-                // 上一周 → 那周的周日;下一周 → 那周的同一天(碰到今天以后就停在今天)
+                // 上一周 → 那周的周日;下一周 → 那周的同一天(翻回本周碰到今天以后就停在今天;往后翻的同一天没排期就看那周周一)
                 calWeek(dir) {
                     const d = this.cal.data;
                     if (!d || (dir < 0 ? !this.calCanPrev : !this.calCanNext)) return;
                     if (dir < 0) return this.loadCalendar(calAddDays(d.prev, 6));
                     const same = calAddDays(d.next, d.days.findIndex(x => x.day === d.day));
-                    this.loadCalendar(same > d.today ? '' : same);
+                    if (same <= d.today) return this.loadCalendar(same);
+                    if (d.next <= d.today) return this.loadCalendar('');
+                    this.loadCalendar(same <= (d.last || d.today) ? same : d.next);
                 },
                 calToggleOpen() {
                     this.cal.open = !this.cal.open;
@@ -21786,7 +21887,7 @@
                     if (m.loading || m.done) return;
                     m.loading = true; m.err = false;
                     try {
-                        const r = await fetch('/api/calendar/list?day=' + encodeURIComponent(this.cal.day) + '&cat=' + encodeURIComponent(this.cal.cat) + '&offset=' + m.items.length + '&limit=30');
+                        const r = await fetch('/api/calendar/list?day=' + encodeURIComponent(this.cal.day) + '&cat=' + encodeURIComponent(this.cal.cat) + '&offset=' + m.items.length + '&limit=30' + calTzQ());
                         const j = await r.json();
                         if (m.key !== key) return;
                         const have = new Set(m.items.map(x => x.title));
@@ -21809,10 +21910,13 @@
                     img.classList.add('loaded');
                     if (img.parentElement) img.parentElement.classList.add('img-loaded');
                 },
-                // 卡片第二行:更新时间(北京时间)· 地区;好几个站都更新了的标出来
+                // 左上角标:资源站头一回更新 = 新上;TMDB 排期里的第 1 集 = 首播 / 新季
+                calBadge(it) { return it.isNew ? '新上' : (it.plan && it.tag) || ''; },
+                // 卡片第二行:更新时间(本机时区,跟日期分天一致)· 地区;还没更新的写「待播」(TMDB 排期)/「预计更新」(按前两周规律猜的)
                 calSub(it) {
                     const parts = [];
-                    if (it.t) { const d = new Date(it.t + 8 * 3600e3); parts.push(String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0')); }
+                    if (it.plan) parts.push(it.plan === 'guess' ? '预计更新' : '待播');
+                    if (it.t) { const d = new Date(it.t); parts.push(String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')); }
                     if (it.area) parts.push(String(it.area).split(/[,，/ ]/)[0]);
                     return parts.join(' · ');
                 },

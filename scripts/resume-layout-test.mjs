@@ -86,7 +86,7 @@ console.log('② CSS');
     // 盖住后藏起的首页层:每个都是 #app 真实的直接子节点;覆盖层/弹窗/封禁锁/TV 悬浮钮一个都不能在里面;首页层一个都不能漏
     const cm = /((?:\s*body\.detail-covered #app > [^,{]+,?)+)\s*\{\s*visibility: hidden !important;\s*\}/.exec(HTML);
     const sels = cm ? cm[1].split(',').map(s => s.trim().replace(/^body\.detail-covered #app > /, '')).filter(Boolean) : [];
-    ok(sels.length === 15, '隐藏列表 15 项(含片单页 .pl-page、短剧分类页 .sl-page、杂志风首页的刊头 .mag-mast / 正文 .mag)', sels);
+    ok(sels.length === 16, '隐藏列表 16 项(含片单页 .pl-page、短剧分类页 .sl-page、杂志风首页的刊头 .mag-mast / 正文 .mag、右下角 APP 按钮 .btn-app)', sels);
     const parse5 = dep('parse5');
     const attr = (n, name) => { const a = (n.attrs || []).find(x => x.name === name); return a ? a.value : null; };
     const walk = function* (n) { yield n; for (const c of ((n.nodeName === 'template' ? n.content : n).childNodes || [])) yield* walk(c); };
@@ -354,7 +354,7 @@ console.log('④ 接线(静态)');
     ok(/this\._swReloadIfPending\(\);[^\n]*\n\s*\}$/.test(cdEnd) && /this\._swReloadIfPending\(\);[^\n]*\n\s*\}$/.test(ghEnd), 'closeDetail / goHome 收尾时刷待刷新的 SW');
     ok((HTML.match(/this\._swReloadIfPending\(\)/g) || []).length === 2, '…只有这两处调用(侦听器 / 后台恢复都不刷)');
     const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
-    ok(/const CACHE_VERSION = 'v44'/.test(sw), 'sw.js v44(重新预缓存页面外壳;v42 起弹幕不进 SW;v43 预缓存进度条预览;v44 预缓存评论剧集键)');
+    ok(/const CACHE_VERSION = 'v45'/.test(sw), 'sw.js v45(重新预缓存页面外壳;v42 起弹幕不进 SW;v43 预缓存进度条预览;v44 预缓存评论剧集键;v45 首页启动检测 + 电视版)');
     // dg-resume-core 在 adClipSkip 前面、同一个脚本里(adClipSkip / adCut 直接调 dgNetShaped)
     const main = [...HTML.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).find(s => s.includes('createApp({')) || '';
     ok(main.indexOf('// <dg-resume-core>') > 0 && main.indexOf('// <dg-resume-core>') < main.indexOf('window.adClipSkip = {'), '<dg-resume-core> 在主脚本里、adClipSkip 之前');

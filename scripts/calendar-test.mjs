@@ -131,5 +131,124 @@ await cal.tick();
 }
 db.close();
 
+console.log('④ 今天以后:TMDB 排期 + 按规律预计');
+{
+    const db = new Database(':memory:');
+    let now = NOW;   // 北京 2026-11-26 20:00 周四
+    const ep = (n, d) => ({ episode_number: n, air_date: d });
+    const SHOWS = {
+        1: { name: '两京十五日', origin_country: ['CN'], genres: [{ id: 18 }], popularity: 50, poster_path: '/a.jpg', first_air_date: '2026-11-10',
+            next_episode_to_air: { air_date: '2026-11-27', season_number: 1, episode_number: 13 },
+            season: [ep(11, '2026-11-26'), ep(12, '2026-11-26'), ep(13, '2026-11-27'), ep(14, '2026-11-27'), ep(15, '2026-11-28'), ep(16, '2026-12-20')] },
+        2: { name: '你好，星期六', origin_country: ['CN'], genres: [{ id: 10764 }], popularity: 30, next_episode_to_air: { air_date: '2026-11-28', season_number: 5, episode_number: 46 }, season: [ep(46, '2026-11-28')] },
+        3: { name: '新剧来了', origin_country: ['CN'], genres: [{ id: 18 }], popularity: 5, next_episode_to_air: { air_date: '2026-11-29', season_number: 1, episode_number: 1 }, season: [ep(1, '2026-11-29'), ep(2, '2026-11-29')] },
+        4: { name: 'No Chinese Title', origin_country: ['CN'], genres: [{ id: 18 }], popularity: 99, next_episode_to_air: { air_date: '2026-11-27', season_number: 1, episode_number: 3 }, season: [ep(3, '2026-11-27')] },
+        5: { name: '塔尔萨之王', origin_country: ['US'], genres: [{ id: 18 }], popularity: 900, next_episode_to_air: { air_date: '2026-11-27', season_number: 3, episode_number: 1 }, season: [ep(1, '2026-11-27')] },
+        6: { name: '晚间新闻', origin_country: ['CN'], genres: [{ id: 10763 }], popularity: 80, next_episode_to_air: { air_date: '2026-11-27', season_number: 1, episode_number: 9 }, season: [ep(9, '2026-11-27')] },
+        7: { name: '已完结的剧', origin_country: ['CN'], genres: [{ id: 18 }], popularity: 70, next_episode_to_air: null, season: [] },
+        8: { name: '粤语教程', origin_country: ['CN'], genres: [{ id: 10762 }], popularity: 60, next_episode_to_air: { air_date: '2026-11-27', season_number: 1, episode_number: 5 }, season: [ep(5, '2026-11-27')] },
+        9: { name: '加冕街', origin_country: ['GB'], genres: [{ id: 18 }, { id: 10766 }], popularity: 300, next_episode_to_air: { air_date: '2026-11-27', season_number: 67, episode_number: 222 }, season: [ep(222, '2026-11-27')] },
+        10: { name: '株式会社スターダム', origin_country: ['JP'], genres: [{ id: 18 }], popularity: 400, next_episode_to_air: { air_date: '2026-11-28', season_number: 1, episode_number: 110 }, season: [ep(110, '2026-11-28')] },
+        11: { name: '哥伦比亚电视小说', origin_country: ['CO'], genres: [{ id: 18 }], popularity: 90, next_episode_to_air: { air_date: '2026-11-28', season_number: 1, episode_number: 14 }, season: [ep(14, '2026-11-28')] },
+    };
+    let discover = { CN: [1, 2, 3, 4, 6, 7, 8], US: [5, 11], GB: [9], JP: [10] }, tvFail = false, calls = 0;
+    const tmdbGet = async (p, q) => {
+        calls++;
+        if (p === '/discover/tv') return { results: (discover[q.with_origin_country] || []).map((id) => ({ id })), total_pages: 1 };
+        let m = /^\/tv\/(\d+)$/.exec(p);
+        if (m) { if (tvFail) throw new Error('timeout'); const s = SHOWS[m[1]]; return Object.assign({ id: +m[1] }, s, { season: undefined }); }
+        m = /^\/tv\/(\d+)\/season\/(\d+)$/.exec(p);
+        if (m) return { episodes: SHOWS[m[1]].season };
+        throw new Error('unexpected ' + p);
+    };
+    // 资源站历史:繁花 前一周、前两周的周五都更新了 → 预计这周五(11-27);完结的、只更新过一周的不猜;两京十五日今天资源站已经更新
+    const cal = createCalendar({ db: () => db, now: () => now, sites: () => [], httpGet: async () => ({}), tmdbGet, opts: { pageGapMs: 0, schedGapMs: 0 } });
+    cal.status();   // 建表
+    // t 不给 = 那天北京 20 点
+    const insQ = db.prepare(`INSERT INTO cal_items (day, nk, title, cat, remarks, ep, pic, year, area, t, sites, n) VALUES (?,?,?,?,?,0,'',2026,'大陆',?,'a',1)`);
+    const ins = { run: (d, nk, title, cat, rm, t) => insQ.run(d, nk, title, cat, rm, t != null ? t : Date.parse(d + 'T12:00:00Z')) };
+    for (const d of ['2026-11-13', '2026-11-20']) { ins.run(d, '繁花', '繁花', 'tv', '更新至第10集'); ins.run(d, '完结剧', '完结剧', 'tv', '全30集'); }
+    ins.run('2026-11-20', '一周剧', '一周剧', 'tv', '更新至第2集');
+    ins.run('2026-11-26', '两京十五日', '两京十五日', 'tv', '更新至第12集');
+    ins.run('2026-11-26', '早更剧', '早更剧', 'tv', '更新至第3集', Date.UTC(2026, 10, 26, 1, 0));   // 北京 11-26 早上 9 点 = 北美 11-25 傍晚
+    await cal.tick();
+    const st = cal.status().sites.find((s) => s.site === '@tmdb');
+    ok(st && st.last_ok === NOW && !st.last_err && st.items > 0, 'TMDB 排期拉成功,状态记在 @tmdb', st);
+    const w = cal.week('2026-11-26', 24);
+    const D = Object.fromEntries(w.days.map((x) => [x.day, x]));
+    ok(w.cats.tv.items.filter((x) => x.title === '两京十五日').length === 1 && !w.cats.tv.items.find((x) => x.title === '两京十五日').plan, '今天资源站已经更新的,不再重复出一条「待播」', w.cats.tv.items);
+    ok(D['2026-11-27'].total === 2 && D['2026-11-27'].real === 0 && D['2026-11-27'].plan === 2 && D['2026-11-27'].future, '明天:2 部待播(资源站还没有 → real = 0)', D['2026-11-27']);
+    ok(D['2026-11-26'].real === 2 && D['2026-11-26'].plan === 0, '今天:资源站更新了的照常算 real', D['2026-11-26']);
+    const w27 = cal.week('2026-11-27', 24);
+    const tv27 = w27.cats.tv.items.map((x) => x.title + ':' + x.plan + ':' + x.remarks);
+    ok(tv27.join() === '两京十五日:tmdb:第13-14集,繁花:guess:', '明天电视剧:TMDB 排期在前(同一天两集写「第13-14集」),再是按规律预计的繁花;完结的 / 只更新过一周的不猜', tv27);
+    ok(w27.cats.tv.n === 2 && w27.days.find((x) => x.day === '2026-11-27').counts.tv === 2, '明天电视剧 2 部');
+    ok(!w27.cats.tv.items.some((x) => /No Chinese|晚间新闻|粤语教程/.test(x.title)), '没中文译名 / 新闻 / 教学片 不收');
+    const w28 = cal.week('2026-11-28', 24);
+    const v = w28.cats.variety.items[0], us = w28.cats.tv.items.find((x) => x.title === '塔尔萨之王');
+    ok(v && v.title === '你好，星期六' && v.plan === 'tmdb' && v.remarks === '', '综艺:TMDB 的集号和资源站「第2026xxxx期」对不上 → 不写集数', v);
+    ok(us && us.area === '美国' && us.tag === '新季' && us.remarks === '第1集', '美剧当地 11-27 播 → 北京 11-28 才有片源;新一季第 1 集标「新季」', us);
+    ok(w28.cats.tv.items.map((x) => x.title).join() === '两京十五日,塔尔萨之王', '排序:华语在前(美剧热度 900 也排在热度 50 的国产剧后面);欧美肥皂剧、没译名的日文片名、别的产地 不收', w28.cats.tv.items.map((x) => x.title));
+    const w29 = cal.week('2026-11-29', 24);
+    const nw = w29.cats.tv.items.find((x) => x.title === '新剧来了');
+    ok(nw && nw.tag === '首播' && nw.remarks === '第1-2集', '第一季第 1 集 = 首播', nw);
+    ok(w.last === '2026-11-29' && w.days.find((x) => x.day === '2026-11-25').plan === 0, 'last = 排期排到哪天(两周外的第 16 集不收);过去的日子没有待播', [w.last]);
+    const l1 = cal.list('2026-11-27', 'tv', 0, 1), l2 = cal.list('2026-11-27', 'tv', 1, 1);
+    ok(l1.total === 2 && l1.items[0].title === '两京十五日' && l2.items.length === 1 && l2.items[0].title === '繁花', 'list:待播的也能分页', [l1, l2]);
+    const lt = cal.list('2026-11-26', 'tv', 0, 30);
+    ok(lt.total === lt.items.length && lt.items[0].title === '两京十五日' && !lt.items[0].plan, 'list 今天:先列资源站已更新的', lt);
+    // 按看的人的时区分天(Regina = UTC-6,不过夏令时):此刻北京 11-26 20:00 = Regina 11-26 06:00
+    const R = 'America/Regina';
+    const wr = cal.week('', 24, R);
+    ok(wr.today === '2026-11-26' && wr.tz === R && wr.day === '2026-11-26', 'tz:「今天」按当地日期', [wr.today, wr.tz]);
+    ok(!wr.cats.tv.items.some((x) => x.title === '早更剧') && cal.week('2026-11-25', 24, R).cats.tv.items.some((x) => x.title === '早更剧' && !x.plan),
+        'tz:北京早上 9 点更新的,在北美算前一天傍晚');
+    ok(w.cats.tv.items.some((x) => x.title === '早更剧'), '同一条在北京时间还是 11-26');
+    const r27 = cal.week('2026-11-27', 24, R), r28 = cal.week('2026-11-28', 24, R);
+    ok(r27.cats.tv.items.some((x) => x.title === '塔尔萨之王') && !r28.cats.tv.items.some((x) => x.title === '塔尔萨之王'), 'tz:美剧当地 11-27 晚上播 → 北美就是 11-27(北京是 11-28)');
+    ok(r27.cats.tv.items.some((x) => x.title === '两京十五日' && x.remarks === '第13-14集'), 'tz:国产剧北京 11-27 晚上 = Regina 11-27 清早,还是同一天');
+    const rl = cal.list('2026-11-25', 'tv', 0, 30, R);
+    ok(rl.items.map((x) => x.title).join() === '早更剧' && rl.total === 1, 'list 也按时区分天', rl);
+    ok(cal.week('', 24, 'Not/AZone').tz === 'Asia/Shanghai' && cal.week('', 24, 'a b;drop').tz === 'Asia/Shanghai', '不认识 / 不合法的时区 → 北京时间');
+    // 浏览器同时报此刻的 UTC 偏移(分钟):跟服务器时区库算的一致 → 用时区名;不一致(时区库旧了) → 按浏览器的固定偏移
+    ok(cal.week('', 24, R, '-360').tz === R && cal.week('', 24, 'Asia/Shanghai', 480).tz === 'Asia/Shanghai', 'tzo 跟时区名对得上:照用时区名');
+    const fx = cal.week('', 24, R, '-420');
+    ok(fx.tz === '@-420' && fx.today === '2026-11-26', 'tzo 对不上(服务器时区库旧了):按浏览器的偏移 @-420', [fx.tz, fx.today]);
+    ok(cal.week('', 24, '', -300).tz === '@-300' && cal.week('', 24, 'Not/AZone', 'x').tz === 'Asia/Shanghai' && cal.week('', 24, R, 7).tz === R, '没时区名只有偏移 → 固定偏移;偏移不合法 → 不管它');
+    ok(cal._dayIn('@-420', Date.UTC(2026, 10, 27, 6, 30)) === '2026-11-26' && cal._dayRange('@-420', '2026-11-26')[0] === Date.UTC(2026, 10, 26, 7), '固定偏移:分天 / 边界');
+    const T = 'America/Toronto';   // 2026-11-01 凌晨 2 点夏令时结束,那天 25 小时
+    const [ta, tb] = cal._dayRange(T, '2026-11-01');
+    ok(ta === Date.UTC(2026, 10, 1, 4) && tb === Date.UTC(2026, 10, 2, 5) && cal._dayIn(T, Date.UTC(2026, 10, 2, 4, 30)) === '2026-11-01', 'tz:夏令时切换那天的边界也对', [new Date(ta).toISOString(), new Date(tb).toISOString()]);
+    // 30 分钟后:不到 6 小时不重拉
+    const c0 = calls;
+    now = NOW + 31 * 60e3;
+    await cal.tick();
+    ok(calls === c0, '6 小时内不重拉 TMDB', calls - c0);
+    // 7 小时后:详情一半以上查失败 → 留着上一轮的排期,记错误
+    now = NOW + 7 * 3600e3; tvFail = true;
+    await cal.tick();
+    const st2 = cal.status().sites.find((s) => s.site === '@tmdb');
+    ok(/失败太多/.test(st2.last_err) && db.prepare("SELECT count(*) AS c FROM cal_sched WHERE nk = '两京十五日'").get().c > 0, 'TMDB 大面积失败:不清旧排期', st2);
+    const c1 = calls;
+    now += 30 * 60e3;
+    await cal.tick();
+    ok(calls === c1, '失败后 1 小时内不重试', calls - c1);
+    // 第二天 10 点:重拉成功 → 整张表换成新的;昨天的排期清掉
+    now = NOW + 14 * 3600e3; tvFail = false; discover = { CN: [3] };
+    await cal.tick();
+    const left = db.prepare('SELECT DISTINCT nk FROM cal_sched').all().map((r) => r.nk);
+    ok(left.join() === norm('新剧来了'), '重拉成功:整张排期换成新的', left);
+    ok(db.prepare('SELECT count(*) AS c FROM cal_sched WHERE t < ?').get(now - 36 * 3600e3).c === 0, '一天半以前的排期不留');
+    // 没传 tmdbGet:只有按规律预计
+    const c3 = createCalendar({ db: () => db, now: () => NOW, sites: () => [], httpGet: async () => ({}) });
+    db.prepare('DELETE FROM cal_sched').run();
+    const w3 = c3.week('2026-11-27', 24);
+    ok(w3.cats.tv.items.map((x) => x.title).join() === '繁花' && w3.last === '2026-11-26', '没配 TMDB:未来只有按规律预计的', w3.cats.tv.items);
+    ins.run('2026-11-19', '日更剧', '日更剧', 'tv', '更新至第5集'); ins.run('2026-11-26', '日更剧', '日更剧', 'tv', '更新至第9集');
+    ok(c3.week('2026-12-03', 24).cats.tv.n === 0, '只猜 6 天内(12-03 前两周同一天都更新了也不猜)');
+    db.close();
+}
+function norm(s) { return String(s).normalize('NFKC').toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, ''); }
+
 console.log(fail ? `\nFAILED: ${pass} passed, ${fail} failed` : `\nALL PASSED: ${pass} passed, 0 failed`);
 process.exit(fail ? 1 : 0);

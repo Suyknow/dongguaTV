@@ -218,6 +218,7 @@ const ctxObj = {
     document: { querySelector: sel => ({ focus() { focused.push(sel); } }), getElementById: () => null, addEventListener() { }, body: { classList: { add() { }, remove() { }, contains: () => false } } },
     Promise, JSON, Math, Date, Object, Array, String, Number, Boolean, RegExp, Map, Set, WeakMap, WeakSet, Symbol, Error, TypeError,
     URL, URLSearchParams, Uint8Array, ArrayBuffer, Proxy, Reflect, parseInt, parseFloat, isFinite, isNaN, encodeURIComponent, decodeURIComponent, AbortController, TextEncoder, TextDecoder,
+    Intl: { DateTimeFormat: () => ({ resolvedOptions: () => ({ timeZone: 'America/Vancouver' }) }) },   // 📅 追剧日历按浏览器时区分天
     scrollY: 0, innerHeight: 800,
     scrollTo(a) { scrolls.push(a); },
 };
@@ -422,12 +423,14 @@ const ids = app => app.homeBlocks.map(b => b.id).join(',');
     ctxObj.fetch = (url) => { calls.push(url); const d = /day=2026-11-25/.test(url) ? week('2026-11-25', { cats: Object.assign(week('').cats, { tv: { n: 9, items: [] } }) }) : week('2026-11-26'); return Promise.resolve({ ok: true, json: () => Promise.resolve(d) }); };
     ok(!a.calHas && !ids(a).includes('calendar'), '还没拉到:首页不出追剧日历');
     await a.loadCalendar();
-    ok(calls[0] === '/api/calendar?limit=24' && /day=2026-11-25/.test(calls[1] || '') && a.cal.day === '2026-11-25', '今天只更新了 5 部(<12):先看昨天', calls);
+    const TZQ = '&tz=America%2FVancouver&tzo=' + (-new Date().getTimezoneOffset());
+    ok(calls[0] === '/api/calendar?limit=24' + TZQ && calls[1] === '/api/calendar?limit=24' + TZQ + '&day=2026-11-25' && a.cal.day === '2026-11-25', '今天只更新了 5 部(<12):先看昨天;都带上浏览器时区', calls);
     ok(a.calHas && ids(a).split(',').indexOf('calendar') === 2, '有数据:首页在收藏后面出追剧日历', ids(a));
     const dd = a.calDays;
     ok(dd.length === 7 && dd[3].today && dd[2].active && dd[4].future && dd[0].dow === '周一' && dd[0].md === '11/23' && dd[3].total === 7, '日期标签:周几 / 月/日 / 今天 / 选中 / 未来不可点,数量含短剧', dd.map(x => [x.dow, x.md, x.total, x.today, x.active, x.future]));
     ok(a.calCats.map(c => c.k + c.n).join() === 'tv9,short2' && a.cal.cat === 'tv', '分类标签只列有更新的,默认选第一个');
-    ok(a.calSub(week('').cats.tv.items[0]) === '14:05 · 大陆' && a.calPic({ pic: 'http://img.x/a.jpg' }) === 'https://img.x/a.jpg', '卡片:北京时间 HH:MM · 第一个地区;http 封面换 https');
+    const lt = new Date(Date.UTC(2026, 10, 26, 6, 5)), hm = String(lt.getHours()).padStart(2, '0') + ':' + String(lt.getMinutes()).padStart(2, '0');
+    ok(a.calSub(week('').cats.tv.items[0]) === hm + ' · 大陆' && a.calPic({ pic: 'http://img.x/a.jpg' }) === 'https://img.x/a.jpg', '卡片:本机时间 HH:MM · 第一个地区;http 封面换 https', [a.calSub(week('').cats.tv.items[0]), hm]);
     ok(a.calWeekLabel === '本周' && a.calCanPrev && !a.calCanNext, '本周:能看上一周,不能看下一周');
     calls.length = 0;
     a.calWeek(-1);
@@ -442,6 +445,40 @@ const ids = app => app.homeBlocks.map(b => b.id).join(',');
     calls.length = 0;
     a.calPickDay('2026-11-24');
     ok(/day=2026-11-24/.test(calls[0] || ''), '点日期 → 拉那天', calls);
+    {
+        // 今天以后 = 待播(TMDB 排期 / 按规律预计):有待播的日子能点、能翻到下一周;今天的待播不算进「太少先看昨天」
+        const calAdd = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+        const fut = week('2026-11-26', { last: '2026-12-09' });
+        fut.days = fut.days.map((x, i) => Object.assign({}, x, i === 3 ? { total: 30, real: 5 } : i === 4 ? { total: 6, real: 0, plan: 6, counts: { tv: 6 } } : {}));
+        ctxObj.fetch = (url) => { calls.push(url); return Promise.resolve({ ok: true, json: () => Promise.resolve(/day=2026-11-25/.test(url) ? week('2026-11-25') : fut) }); };
+        calls.length = 0;
+        await a.loadCalendar();
+        ok(/day=2026-11-25/.test(calls[1] || ''), '今天 30 部里 25 部是待播、真更新的只有 5 部:还是先看昨天', calls);
+        await a.loadCalendar('2026-11-26');
+        const fd = a.calDays;
+        ok(fd[4].future && fd[4].total === 6 && fd[5].future && !fd[5].total, '明天有 6 部待播:能点、显示数量;后天没排期', fd.map(x => [x.day, x.total, x.future]));
+        ok(a.calCanNext, '排期排到下周:能翻下一周');
+        calls.length = 0;
+        a.calWeek(1);
+        ok(/day=2026-12-03/.test(calls[0] || ''), '下一周 → 那周的同一天(周四)', calls);
+        const nxt = Object.assign(week('2026-12-03', { monday: '2026-11-30', prev: '2026-11-23', next: '2026-12-07', last: '2026-12-09' }));
+        nxt.days = nxt.days.map((x, i) => Object.assign({}, x, { day: calAdd('2026-11-30', i), total: i === 3 ? 4 : 0, counts: i === 3 ? { tv: 4 } : {}, future: true }));
+        nxt.cats = Object.assign({}, nxt.cats, { tv: { n: 4, items: [{ title: '乙', plan: 'tmdb', tag: '首播', area: '大陆', remarks: '第1集' }, { title: '丙', plan: 'guess', tag: '', area: '韩国' }] } });
+        ctxObj.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve(nxt) });
+        await a.loadCalendar('2026-12-03');
+        ok(a.calWeekLabel === '下周' && a.calCanPrev && a.calCanNext, '下周:标「下周」,还能再往后翻一周(排到 12-09)', [a.calWeekLabel, a.calCanNext]);
+        const [i1, i2] = nxt.cats.tv.items;
+        ok(a.calBadge(i1) === '首播' && a.calBadge(i2) === '' && a.calBadge({ isNew: true }) === '新上', '角标:首播 / 预计的没角标 / 资源站新上', [a.calBadge(i1), a.calBadge(i2)]);
+        ok(a.calSub(i1) === '待播 · 大陆' && a.calSub(i2) === '预计更新 · 韩国', '卡片第二行:待播 / 预计更新 · 地区', [a.calSub(i1), a.calSub(i2)]);
+        a.cal.day = '2026-12-05';
+        ok(a.calEmptyText === '这天还没有排期', '未来没排期的那天:写「还没有排期」');
+        a.cal.day = '2026-11-24';
+        ok(a.calEmptyText === '这天资源站还没有更新', '过去:照旧');
+        const last = Object.assign({}, nxt, { last: '2026-12-06' });
+        ctxObj.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve(last) });
+        await a.loadCalendar('2026-12-03');
+        ok(!a.calCanNext, '排期只到这周:不能再往后翻');
+    }
     ctxObj.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ enabled: false }) });
     const b = makeApp({});
     await b.loadCalendar();
